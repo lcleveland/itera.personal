@@ -1,8 +1,8 @@
 # itera.personal
 
 lcleveland's NixOS configuration, built on [itera](https://github.com/lcleveland/itera)
-(a batteries-included, opt-out layer using hjem, disko, impermanence, agenix, and
-the mango/DankMaterialShell desktop).
+(a batteries-included, opt-out layer using hjem, disko, impermanence, and the
+mango/DankMaterialShell desktop).
 
 ## Hosts
 
@@ -18,11 +18,10 @@ Both use itera's declarative disk layout (`disko`) with a tmpfs root
 
 ## User & password
 
-The single user `lcleveland` is declared in [hosts/common.nix](hosts/common.nix).
-The login password is stored with **agenix** (`secrets/lcleveland-password.age`,
-an mkpasswd hash) and wired via `users.users.lcleveland.hashedPasswordFile`. The
-secret decrypts at activation with the host's ed25519 SSH key (persisted by
-impermanence).
+The single user `lcleveland` is declared in [hosts/common.nix](hosts/common.nix)
+with a temporary `initialPassword` (= `lcleveland`). **Change it after first login
+with `passwd`.** A secrets-managed password (e.g. agenix +
+`users.users.lcleveland.hashedPasswordFile`) can be added later.
 
 ## Installing from the live ISO
 
@@ -45,16 +44,7 @@ for the laptop.
    in [hosts/dream.nix](hosts/dream.nix) to match (e.g. `/dev/nvme0n1`, `/dev/sda`).
    **Everything on that disk is erased.**
 
-4. **Disable the password secret for the first install.** The agenix
-   `.age` does not exist yet (the host key is created on first boot), so comment
-   out these two lines or the build fails:
-   - `itera.secrets.secrets.lcleveland-password.file = ...` in
-     [hosts/common.nix](hosts/common.nix)
-   - `users.users.lcleveland.hashedPasswordFile = ...` in the same file
-
-   First login then uses the fallback `initialPassword` (= `lcleveland`).
-
-5. **Partition + install** (disko wipes the disk, formats it, mounts under `/mnt`,
+4. **Partition + install** (disko wipes the disk, formats it, mounts under `/mnt`,
    and installs — all in one command; disk key is `main`):
 
    ```sh
@@ -76,46 +66,16 @@ for the laptop.
    ```
    </details>
 
-6. **Reboot** and remove the ISO. Log in as `lcleveland` / `lcleveland`, then
-   continue to the agenix bootstrap below to switch to the real password.
+5. **Reboot** and remove the ISO. Log in as `lcleveland` / `lcleveland`, then
+   **change the password** with `passwd`.
 
-## agenix password bootstrap (after first boot)
-
-agenix decrypts with the host's ed25519 key, which only exists after the first
-boot — so finish the password wiring on the installed system:
-
-1. **Get a persisted checkout.** Clone this repo into `~/Documents/itera.personal`
-   (the path `itera.nix.nh.flake` and impermanence expect):
+6. **Get a persisted checkout** for future rebuilds. Clone this repo into
+   `~/Documents/itera.personal` (the path `itera.nix.nh.flake` and impermanence
+   expect):
 
    ```sh
    git clone https://github.com/lcleveland/itera.personal ~/Documents/itera.personal
-   cd ~/Documents/itera.personal
    ```
-
-2. **Capture host keys.** On each host read `/etc/ssh/ssh_host_ed25519_key.pub`
-   and paste it into [secrets/secrets.nix](secrets/secrets.nix), replacing the
-   matching placeholder (`dream` / `framework`).
-
-3. **Create the secret.** Hash the real password, then encrypt it. The agenix CLI
-   is already on `PATH` (itera installs it):
-
-   ```sh
-   mkpasswd -m sha-512                       # copy the resulting hash
-   cd secrets
-   agenix -e lcleveland-password.age         # paste the hash, save, quit
-   cd ..
-   git add secrets/lcleveland-password.age secrets/secrets.nix
-   ```
-
-4. **Re-enable and rebuild.** Uncomment the two lines disabled in install step 4,
-   then:
-
-   ```sh
-   sudo nixos-rebuild switch --flake .#dream   # or: sudo nh os switch
-   ```
-
-   Confirm: `ls -l /run/agenix/lcleveland-password` exists and
-   `getent shadow lcleveland` shows a hash. Commit the changes.
 
 ## Rebuild
 
@@ -127,8 +87,5 @@ sudo nh os switch
 
 ## Notes
 
-- `nix flake check` / eval requires `secrets/lcleveland-password.age` to exist.
-  Before it is created, temporarily comment out the `secrets.secrets` and
-  `hashedPasswordFile` lines in [hosts/common.nix](hosts/common.nix).
 - Eiros hardware workarounds (dream MT7927 initrd timeout, Framework MT7922
   Bluetooth quirks) were intentionally **not** carried over.
