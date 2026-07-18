@@ -63,9 +63,9 @@ After it finishes:
 1. **Reboot** and remove the ISO. Log in as `lcleveland` / `lcleveland`, then
    **change the password** with `passwd`.
 
-2. **(Optional) Get a persisted checkout** for convenient rebuilds. Clone the repo
-   to `~/Documents/itera.personal` (the path `itera.nix.nh.flake` expects) so
-   `sudo nh os switch` works against a local tree:
+2. **(Optional) Get a checkout** if you want to edit the config locally. Rebuilds
+   don't need it — `itera.update.flake` points at the GitHub remote — but a clone
+   is handy for making changes before pushing:
 
    ```sh
    git clone https://github.com/lcleveland/itera.personal ~/Documents/itera.personal
@@ -73,17 +73,23 @@ After it finishes:
 
 ## Rebuild
 
-Straight from the remote flake, no checkout needed:
+Both hosts configure itera's update battery ([hosts/common.nix](hosts/common.nix)
+sets `itera.update.flake` to `github:lcleveland/itera.personal`, and each host sets
+`itera.update.configuration` to its flake attr — `dream` / `framework` — since the
+hostnames `DREAM` / `LS-04380` don't match). So the `itera` command needs no
+arguments and no checkout on disk:
+
+```sh
+itera rebuild   # nh os switch from the configured remote flake + host
+itera update    # --refresh to the newest pushed revision, then rebuild
+itera boot      # rebuild, but apply on next reboot
+itera gc        # prune old generations
+```
+
+Equivalent one-shot rebuild without the `itera` command:
 
 ```sh
 sudo nixos-rebuild switch --flake github:lcleveland/itera.personal#dream
-```
-
-Or, with a local checkout at `~/Documents/itera.personal` (see install step 5),
-`itera.nix.nh.flake` points there so you can just run:
-
-```sh
-sudo nh os switch
 ```
 
 ## Notes

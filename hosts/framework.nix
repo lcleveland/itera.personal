@@ -10,6 +10,11 @@
     networking.hostName = "LS-04380";
     hardware.cpu = "amd";
 
+    # This host is nixosConfigurations.framework; the hostname (LS-04380) differs
+    # from the flake attribute, so set it explicitly (else `itera update`/`rebuild`
+    # would pass `--hostname LS-04380` and miss `#framework`).
+    update.configuration = "framework";
+
     # Deliberately-invalid placeholder so the config still evaluates (satisfies
     # itera.disko's non-empty-device assertion) WITHOUT hardcoding a real disk.
     # `disko-install --disk main /dev/<real>` overrides this at install time, so

@@ -7,10 +7,14 @@
     # Pin the NixOS release the stateful data matches. Set ONCE at install time.
     nix.stateVersion = "25.11";
 
-    # `nh` is itera's rebuild front-end. Point it at the persisted checkout of
-    # this repo so `sudo nh os switch` (no args) works. Home dirs are persisted
-    # under impermanence, so a checkout in $HOME is a valid target.
-    nix.nh.flake = "/home/lcleveland/Documents/itera.personal";
+    # The `itera` command's rebuild/update verbs (and a bare `nh os switch`)
+    # build from this flake. Point it at the GitHub remote so rebuilds need no
+    # checkout on disk: `itera rebuild` builds the pushed revision, and being a
+    # remote ref, `itera update` uses `--refresh` (fetch the newest pushed
+    # revision) rather than bumping a local flake.lock. `itera.update.configuration`
+    # is per-host (see hosts/*.nix) because the flake attribute (dream/framework)
+    # differs from the hostname.
+    update.flake = "github:lcleveland/itera.personal";
 
     # Both machines are AMD; a host may override.
     hardware.cpu = "amd";

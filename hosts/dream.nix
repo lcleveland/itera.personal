@@ -5,6 +5,11 @@
     networking.hostName = "DREAM";
     hardware.cpu = "amd";
 
+    # This host is nixosConfigurations.dream; the hostname (DREAM) differs from
+    # the flake attribute, so set it explicitly (else `itera update`/`rebuild`
+    # would pass `--hostname DREAM` and miss `#dream`).
+    update.configuration = "dream";
+
     # Deliberately-invalid placeholder so the config still evaluates (satisfies
     # itera.disko's non-empty-device assertion) WITHOUT hardcoding a real disk.
     # `disko-install --disk main /dev/<real>` overrides this at install time, so
