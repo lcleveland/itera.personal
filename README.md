@@ -26,31 +26,44 @@ with `passwd`.** A secrets-managed password (e.g. agenix +
 
 ## Installing from the live ISO
 
-Boot the official [NixOS ISO](https://nixos.org/download) (minimal or graphical).
-The install runs **directly from the flake on GitHub — no cloning or editing
-first.** `disko-install` partitions, formats, mounts, and installs in one step.
-Replace `dream` with `framework` for the laptop.
+Boot the official [NixOS ISO](https://nixos.org/download) (minimal or graphical),
+get online (`nmcli` on the graphical ISO, or plug in Ethernet), then run the
+installer straight from GitHub — **nothing to clone or edit:**
 
-1. **Network.** Get online (`nmcli` on the graphical ISO, or plug in Ethernet).
+```sh
+curl -sSL https://raw.githubusercontent.com/lcleveland/itera.personal/main/install.sh | sudo bash
+```
 
-2. **Pick the disk.** `lsblk` to find the target (e.g. `/dev/nvme0n1`, `/dev/sda`).
-   **Everything on that disk is erased.**
+[install.sh](install.sh) prompts you to **pick the host** (`dream` / `framework`)
+and the **disk**, confirms the destructive wipe, then hands off to `disko-install`
+(partition + format + mount + `nixos-install`, in one step). Skip either prompt by
+passing them as arguments:
 
-3. **Partition + install** in one command. `--disk main /dev/<disk>` overrides the
-   placeholder device baked into the config, so nothing in the repo needs editing:
+```sh
+curl -sSL .../install.sh | sudo bash -s -- dream               # host given, pick disk
+curl -sSL .../install.sh | sudo bash -s -- dream /dev/nvme0n1  # fully non-interactive
+```
 
-   ```sh
-   sudo env NIX_CONFIG="extra-experimental-features = nix-command flakes
-   accept-flake-config = true" \
-     nix run 'github:nix-community/disko/latest#disko-install' -- \
-     --flake 'github:lcleveland/itera.personal#dream' \
-     --disk main /dev/nvme0n1
-   ```
+<details><summary>Manual equivalent (no script)</summary>
 
-4. **Reboot** and remove the ISO. Log in as `lcleveland` / `lcleveland`, then
+`--disk main /dev/<disk>` overrides the placeholder device in the config, so the
+repo needs no editing:
+
+```sh
+sudo env NIX_CONFIG="extra-experimental-features = nix-command flakes
+accept-flake-config = true" \
+  nix run 'github:nix-community/disko/latest#disko-install' -- \
+  --flake 'github:lcleveland/itera.personal#dream' \
+  --disk main /dev/nvme0n1
+```
+</details>
+
+After it finishes:
+
+1. **Reboot** and remove the ISO. Log in as `lcleveland` / `lcleveland`, then
    **change the password** with `passwd`.
 
-5. **(Optional) Get a persisted checkout** for convenient rebuilds. Clone the repo
+2. **(Optional) Get a persisted checkout** for convenient rebuilds. Clone the repo
    to `~/Documents/itera.personal` (the path `itera.nix.nh.flake` expects) so
    `sudo nh os switch` works against a local tree:
 
