@@ -28,6 +28,10 @@
         hostModule:
         nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
+          # Expose the itera flake to host modules so they can select a
+          # nixos-hardware board via `itera.hardwareModules.<board>` (an
+          # import-time choice, not a `config.itera.*` option).
+          specialArgs = { inherit itera; };
           modules = [
             itera.nixosModules.default
             { nixpkgs.overlays = [ itera.overlays.default ]; }

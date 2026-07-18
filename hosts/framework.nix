@@ -1,6 +1,11 @@
 # framework — Framework 16 work laptop (eiros hostname LS-04380).
-{ ... }:
+{ itera, ... }:
 {
+  # Framework 16 (AMD Ryzen 7040) hardware quirks, re-exported by itera from
+  # nixos-hardware. Board selection is an import-time choice the module system
+  # can't toggle from config, so it goes in `imports` rather than `itera.*`.
+  imports = [ itera.hardwareModules.framework-16-7040-amd ];
+
   itera = {
     networking.hostName = "LS-04380";
     hardware.cpu = "amd";
