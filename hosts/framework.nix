@@ -5,8 +5,12 @@
     networking.hostName = "LS-04380";
     hardware.cpu = "amd";
 
-    # disko WIPES this disk. Verify the device on the machine (`lsblk`) before install.
-    disko.device = "/dev/nvme0n1"; # CHANGE-ME if different
+    # Deliberately-invalid placeholder so the config still evaluates (satisfies
+    # itera.disko's non-empty-device assertion) WITHOUT hardcoding a real disk.
+    # `disko-install --disk main /dev/<real>` overrides this at install time, so
+    # you never edit this file to install — and a forgotten `--disk` fails safe
+    # (disko errors on the bogus path instead of wiping a real disk).
+    disko.device = "/dev/disk/by-id/CHANGE-ME-disko-install-overrides-this";
     disko.swapSize = "32G"; # >= RAM for hibernation
 
     fingerprint.enable = true; # on by default; explicit for clarity

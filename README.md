@@ -12,9 +12,10 @@ mango/DankMaterialShell desktop).
 | `framework` | `LS-04380` | Framework 16 (7040 AMD)    | fingerprint, printing, Colemak-DH, three monitors  |
 
 Both use itera's declarative disk layout (`disko`) with a tmpfs root
-(`impermanence`) — **installing wipes the target disk.** Verify
-`itera.disko.device` in [hosts/dream.nix](hosts/dream.nix) /
-[hosts/framework.nix](hosts/framework.nix) with `lsblk` before installing.
+(`impermanence`) — **installing wipes the target disk.** The target disk is
+chosen at install time with `disko-install --disk main /dev/<disk>`; the
+`itera.disko.device` value in the host files is a fail-safe placeholder that the
+install command overrides, so you never edit the repo to install.
 
 ## User & password
 
@@ -26,52 +27,32 @@ with `passwd`.** A secrets-managed password (e.g. agenix +
 ## Installing from the live ISO
 
 Boot the official [NixOS ISO](https://nixos.org/download) (minimal or graphical).
-disko partitions/formats/mounts and `nixos-install` runs in one step via
-`disko-install`, matching itera's own installer. Replace `dream` with `framework`
-for the laptop.
+The install runs **directly from the flake on GitHub — no cloning or editing
+first.** `disko-install` partitions, formats, mounts, and installs in one step.
+Replace `dream` with `framework` for the laptop.
 
-1. **Network + tools.** Get online (`nmcli` on the graphical ISO, or Ethernet). A
-   recent ISO already ships `nix` with flakes usable via the flags below.
+1. **Network.** Get online (`nmcli` on the graphical ISO, or plug in Ethernet).
 
-2. **Get this config.** Clone it somewhere writable on the live system:
-
-   ```sh
-   nix-shell -p git --run 'git clone https://github.com/lcleveland/itera.personal /tmp/cfg'
-   cd /tmp/cfg
-   ```
-
-3. **Pick the disk.** `lsblk` to find the target, then set `itera.disko.device`
-   in [hosts/dream.nix](hosts/dream.nix) to match (e.g. `/dev/nvme0n1`, `/dev/sda`).
+2. **Pick the disk.** `lsblk` to find the target (e.g. `/dev/nvme0n1`, `/dev/sda`).
    **Everything on that disk is erased.**
 
-4. **Partition + install** (disko wipes the disk, formats it, mounts under `/mnt`,
-   and installs — all in one command; disk key is `main`):
+3. **Partition + install** in one command. `--disk main /dev/<disk>` overrides the
+   placeholder device baked into the config, so nothing in the repo needs editing:
 
    ```sh
    sudo env NIX_CONFIG="extra-experimental-features = nix-command flakes
    accept-flake-config = true" \
      nix run 'github:nix-community/disko/latest#disko-install' -- \
-     --flake '/tmp/cfg#dream' --disk main /dev/nvme0n1
+     --flake 'github:lcleveland/itera.personal#dream' \
+     --disk main /dev/nvme0n1
    ```
 
-   <details><summary>Two-step alternative (if you prefer explicit disko + nixos-install)</summary>
-
-   ```sh
-   # format & mount to /mnt from the config's disko layout
-   sudo nix --extra-experimental-features 'nix-command flakes' \
-     run 'github:nix-community/disko/latest' -- \
-     --mode destroy,format,mount --flake '/tmp/cfg#dream'
-   # install
-   sudo nixos-install --flake '/tmp/cfg#dream'
-   ```
-   </details>
-
-5. **Reboot** and remove the ISO. Log in as `lcleveland` / `lcleveland`, then
+4. **Reboot** and remove the ISO. Log in as `lcleveland` / `lcleveland`, then
    **change the password** with `passwd`.
 
-6. **Get a persisted checkout** for future rebuilds. Clone this repo into
-   `~/Documents/itera.personal` (the path `itera.nix.nh.flake` and impermanence
-   expect):
+5. **(Optional) Get a persisted checkout** for convenient rebuilds. Clone the repo
+   to `~/Documents/itera.personal` (the path `itera.nix.nh.flake` expects) so
+   `sudo nh os switch` works against a local tree:
 
    ```sh
    git clone https://github.com/lcleveland/itera.personal ~/Documents/itera.personal
@@ -79,7 +60,14 @@ for the laptop.
 
 ## Rebuild
 
-`itera.nix.nh.flake` points at this checkout, so after install:
+Straight from the remote flake, no checkout needed:
+
+```sh
+sudo nixos-rebuild switch --flake github:lcleveland/itera.personal#dream
+```
+
+Or, with a local checkout at `~/Documents/itera.personal` (see install step 5),
+`itera.nix.nh.flake` points there so you can just run:
 
 ```sh
 sudo nh os switch
