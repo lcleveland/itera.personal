@@ -1,34 +1,31 @@
 # Settings shared by every host. itera's opinionated defaults are already on
 # (opt-out via mkDefault); this file only sets what deviates from them plus the
 # single user.
-{ pkgs, ... }:
+{ ... }:
 {
-  # Claude Code, both ways:
+  # Claude Code, both ways — all from itera's `itera.ai.claude.enable` battery
+  # (set below), so nothing is installed by hand here:
   #   - claude-code      the `claude` CLI, a terminal tool (also usable in Zed's
-  #                      built-in terminal). Installed via itera's new
-  #                      `itera.ai.claude.enable` battery (below) rather than by
-  #                      hand: it ships `pkgs.claude-code` system-wide AND, under
-  #                      itera's default-on impermanence, persists the per-user
-  #                      state (~/.claude, ~/.claude.json) so the login survives
-  #                      the wiped root. Unfree; itera.nix.allowUnfree is on by
-  #                      default.
-  #   - claude-agent-acp the ACP adapter (binary `claude-agent-acp`) that plugs
-  #                      Claude Code into Zed's agent panel (wired per-user below).
-  #                      Not part of the battery, so it stays here.
+  #                      built-in terminal). Ships `pkgs.claude-code` system-wide
+  #                      AND, under itera's default-on impermanence, persists the
+  #                      per-user state (~/.claude, ~/.claude.json) so the login
+  #                      survives the wiped root. Unfree; itera.nix.allowUnfree is
+  #                      on by default.
+  #   - claude-agent-acp the ACP adapter that plugs Claude Code into Zed's agent
+  #                      panel. `itera.ai.claude.acp.enable` defaults to
+  #                      `itera.ai.claude.enable`, so enabling the CLI brings the
+  #                      adapter too; with the editor battery on (default) itera
+  #                      auto-registers it under Zed's `agent_servers` — no manual
+  #                      package or per-user `agentServers` block needed.
   #
   # NixOS note: the Zed docs/gists point agent_servers at
   # `npx @agentclientprotocol/claude-agent-acp` — DON'T. npx downloads an unpatched
-  # prebuilt binary that dies on NixOS ("could not start dynamically linked
-  # executable"). We point the agent straight at the Nix `claude-agent-acp` binary
-  # instead, and it uses the Nix `claude-code` (autoupdater/installation-checks
-  # already disabled in the nixpkgs wrapper, so it won't download a local binary).
+  # prebuilt binary that dies on NixOS. itera's battery instead points Zed at the
+  # Nix `claude-agent-acp` binary, which uses the Nix `claude-code`.
   #
   # Auth: Zed's in-thread "Authenticate" flow is buggy (and on NixOS can trigger
   # the download above), so log in ONCE with `claude` in a terminal (`/login`);
   # that writes ~/.claude, which the ACP agent reuses — no in-app auth needed.
-  environment.systemPackages = [
-    pkgs.claude-agent-acp
-  ];
 
   # Git identity for lcleveland. No upstream itera battery for this yet, so write
   # ~/.gitconfig directly through the user's hjem home (re-linked every boot, so
@@ -77,15 +74,9 @@
       # added later — e.g. agenix + users.users.lcleveland.hashedPasswordFile.)
       initialPassword = "lcleveland";
 
-      # Register Claude Code in Zed's agent panel over ACP. `command` is the Nix
-      # binary from claude-code-acp (installed above), NOT `npx` — see the NixOS
-      # note there. Rendered by itera's Zed battery to ~/.config/zed/settings.json
-      # under `agent_servers.claude`.
-      programs.zed.agentServers.claude = {
-        command = "claude-agent-acp";
-        args = [ ];
-        env = { };
-      };
+      # Claude Code is registered in Zed's agent panel automatically by itera's
+      # ACP battery (see the Claude note at the top of this file) — no per-user
+      # `programs.zed.agentServers.claude` block is needed.
     };
   };
 }
