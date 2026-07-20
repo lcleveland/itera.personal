@@ -5,10 +5,16 @@
 {
   # Claude Code, both ways:
   #   - claude-code      the `claude` CLI, a terminal tool (also usable in Zed's
-  #                      built-in terminal). Unfree; itera.nix.allowUnfree is on
-  #                      by default.
-  #   - claude-code-acp  the ACP adapter (binary `claude-agent-acp`) that plugs
+  #                      built-in terminal). Installed via itera's new
+  #                      `itera.ai.claude.enable` battery (below) rather than by
+  #                      hand: it ships `pkgs.claude-code` system-wide AND, under
+  #                      itera's default-on impermanence, persists the per-user
+  #                      state (~/.claude, ~/.claude.json) so the login survives
+  #                      the wiped root. Unfree; itera.nix.allowUnfree is on by
+  #                      default.
+  #   - claude-agent-acp the ACP adapter (binary `claude-agent-acp`) that plugs
   #                      Claude Code into Zed's agent panel (wired per-user below).
+  #                      Not part of the battery, so it stays here.
   #
   # NixOS note: the Zed docs/gists point agent_servers at
   # `npx @agentclientprotocol/claude-agent-acp` — DON'T. npx downloads an unpatched
@@ -21,11 +27,22 @@
   # the download above), so log in ONCE with `claude` in a terminal (`/login`);
   # that writes ~/.claude, which the ACP agent reuses — no in-app auth needed.
   environment.systemPackages = [
-    pkgs.claude-code
-    pkgs.claude-code-acp
+    pkgs.claude-agent-acp
   ];
 
+  # Git identity for lcleveland. No upstream itera battery for this yet, so write
+  # ~/.gitconfig directly through the user's hjem home (re-linked every boot, so
+  # it needs no impermanence persistence).
+  hjem.users.lcleveland.files.".gitconfig".text = ''
+    [user]
+    	name = Lyle Cleveland
+    	email = lcleveland@lselectric.com
+  '';
+
   itera = {
+    # Claude Code CLI, system-wide + state persisted across the wiped root.
+    ai.claude.enable = true;
+
     # Pin the NixOS release the stateful data matches. Set ONCE at install time.
     nix.stateVersion = "25.11";
 
