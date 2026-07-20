@@ -36,7 +36,7 @@
   hjem.users.lcleveland.files.".gitconfig".text = ''
     [user]
     	name = Lyle Cleveland
-    	email = lcleveland@lselectric.com
+    	email = lyle.cleveland@proton.me
   '';
 
   itera = {
