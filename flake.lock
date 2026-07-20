@@ -444,6 +444,26 @@
         "type": "github"
       }
     },
+    "ninjarmm-ncplayer": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784589780,
+        "narHash": "sha256-ncDkOck7q+adRuWdnqDXIGDE1wiZ+8ircOZZjsHVJng=",
+        "owner": "lcleveland",
+        "repo": "ninjarmm-ncplayer",
+        "rev": "97dc84fa10104d84b695a7b4396d98aaa05119ac",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lcleveland",
+        "repo": "ninjarmm-ncplayer",
+        "type": "github"
+      }
+    },
     "nix-flatpak": {
       "locked": {
         "lastModified": 1783368811,
@@ -616,6 +636,7 @@
       "inputs": {
         "hjem": "hjem",
         "itera": "itera",
+        "ninjarmm-ncplayer": "ninjarmm-ncplayer",
         "nixpkgs": "nixpkgs"
       }
     },

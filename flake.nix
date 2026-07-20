@@ -16,10 +16,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.hjem.follows = "hjem"; # CRITICAL: share one hjem
     };
+
+    # NinjaOne remote session player (ncplayer) + the ninjarmm:// URL handler.
+    # A flake exposing nixosModules.default (option: programs.ninjarmm-ncplayer.*);
+    # enabled in hosts/common.nix so every host gets it. Share our nixpkgs.
+    ninjarmm-ncplayer = {
+      url = "github:lcleveland/ninjarmm-ncplayer";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { nixpkgs, itera, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -34,6 +42,7 @@
           specialArgs = { inherit itera; };
           modules = [
             itera.nixosModules.default
+            ninjarmm-ncplayer.nixosModules.default
             { nixpkgs.overlays = [ itera.overlays.default ]; }
             ./hosts/common.nix
             hostModule

@@ -36,6 +36,11 @@
     	email = lyle.cleveland@proton.me
   '';
 
+  # NinjaOne remote session player: installs `ncplayer` (FHS-wrapped RPM) and
+  # registers it as the ninjarmm:// URL handler. Module comes from the
+  # ninjarmm-ncplayer flake input, imported for every host in flake.nix.
+  programs.ninjarmm-ncplayer.enable = true;
+
   itera = {
     # Claude Code CLI, system-wide + state persisted across the wiped root.
     ai.claude.enable = true;
