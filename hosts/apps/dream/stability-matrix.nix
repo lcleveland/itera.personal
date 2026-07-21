@@ -27,6 +27,16 @@ let
   stability-matrix-pkg = pkgs.appimageTools.wrapType2 {
     inherit pname version src;
 
+    # This host mounts /home (and /tmp) noexec. .NET single-file apps extract their
+    # bundled native libs to $HOME/.net by default; libSkiaSharp.so has an
+    # executable LOAD segment, so mmap-ing it off a noexec mount fails with
+    # "failed to map segment from shared object" and the app dies before its window
+    # appears. Redirect the bundle extraction to $XDG_RUNTIME_DIR (/run/user/$UID,
+    # which is exec-capable). `profile` is sourced inside the FHS run wrapper.
+    profile = ''
+      export DOTNET_BUNDLE_EXTRACT_BASE_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/StabilityMatrix-dotnet"
+    '';
+
     # Extra runtime libs the bundled .NET/Avalonia app and its child processes expect.
     extraPkgs =
       pkgs: with pkgs; [
