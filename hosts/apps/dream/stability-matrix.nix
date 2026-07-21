@@ -69,4 +69,13 @@ let
 in
 {
   itera.users.lcleveland.packages = [ stability-matrix-pkg ];
+
+  # StabilityMatrix unpacks its own tools (7-zip, uv, portable Python, git, …) into
+  # its data library at ~/StabilityMatrix and then *executes* them. On this host
+  # ~/StabilityMatrix would otherwise live on the noexec tmpfs root, so those execs
+  # fail with "Permission denied" (e.g. Assets/7zzs when installing a package).
+  # Persisting it moves the dir onto the /persist btrfs subvolume, whose bind mounts
+  # are exec-capable (unlike the noexec /home tmpfs) — and, as a bonus, the multi-GB
+  # models/venvs now survive the wiped root instead of vanishing every reboot.
+  itera.impermanence.users.lcleveland.directories = [ "StabilityMatrix" ];
 }
