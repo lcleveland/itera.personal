@@ -1,6 +1,17 @@
 # dream — AMD desktop (eiros hostname DREAM).
 { ... }:
 {
+  # Dream-only apps, migrated from the old eiros.users.personal repo.
+  imports = [
+    ./apps/dream/awakened-poe-trade.nix
+    ./apps/dream/exiled-exchange-2.nix
+    ./apps/dream/stability-matrix.nix
+    ./apps/dream/orca-slicer.nix
+    ./apps/dream/pob.nix
+    ./apps/dream/python.nix
+    ./apps/dream/vesktop.nix
+  ];
+
   itera = {
     networking.hostName = "DREAM";
     hardware.cpu = "amd";

@@ -4,7 +4,11 @@
   # Framework 16 (AMD Ryzen 7040) hardware quirks, re-exported by itera from
   # nixos-hardware. Board selection is an import-time choice the module system
   # can't toggle from config, so it goes in `imports` rather than `itera.*`.
-  imports = [ itera.hardwareModules.framework-16-7040-amd ];
+  imports = [
+    itera.hardwareModules.framework-16-7040-amd
+    # Framework-only apps, migrated from the old eiros.users.work repo.
+    ./apps/framework/smartcard-reader.nix
+  ];
 
   itera = {
     networking.hostName = "LS-04380";

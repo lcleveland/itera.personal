@@ -3,6 +3,17 @@
 # single user.
 { ... }:
 {
+  # Apps shared by both hosts, migrated from the old eiros.users.{personal,work}
+  # repos. One module per app under ./apps/common.
+  imports = [
+    ./apps/common/teams.nix
+    ./apps/common/zoom.nix
+    ./apps/common/yubico.nix
+    ./apps/common/onlyoffice.nix
+    ./apps/common/bruno.nix
+    ./apps/common/caido.nix
+  ];
+
   # Claude Code, both ways — all from itera's `itera.ai.claude.enable` battery
   # (set below), so nothing is installed by hand here:
   #   - claude-code      the `claude` CLI, a terminal tool (also usable in Zed's
