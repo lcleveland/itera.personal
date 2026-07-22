@@ -159,15 +159,102 @@ if [ "$confirm" != "$device" ]; then
   exit 1
 fi
 
+# ---- encryption passphrase -------------------------------------------------
+# Read itera.disko knobs from the evaluated config so this stays in lockstep with
+# the host definition (no duplicated policy).
+cfg_attr() {
+  # `nix eval --raw` errors on a null (nullOr str passwordFile); `|| true` maps
+  # that to an empty string, which callers treat as "unset".
+  nix eval --raw "${FLAKE}#nixosConfigurations.${host}.config.itera.disko.$1" 2>/dev/null || true
+}
+cfg_bool() {
+  nix eval "${FLAKE}#nixosConfigurations.${host}.config.itera.disko.$1" 2>/dev/null || echo false
+}
+
+enc_enabled="$(cfg_bool encryption.enable)"
+tpm2_enabled="$(cfg_bool encryption.tpm2.enable)"
+pwfile="$(cfg_attr encryption.passwordFile)"
+
+# When the host encrypts the disk and its config points at a passwordFile that
+# doesn't exist yet, prompt for a NEW passphrase and write it there. disko reads
+# that file to format the LUKS containers (no interactive prompt), and — for TPM2
+# hosts — we reuse the very same file to enroll the TPM keyslot below, so the
+# whole install (including passwordless auto-unlock) completes in one pass with no
+# post-install step. The file lives only on the live ISO's tmpfs and is shredded
+# when we exit. A passwordFile that already exists (e.g. a fully non-interactive
+# automated install) is used as-is and left alone.
+if [ "$enc_enabled" = "true" ] && [ -n "$pwfile" ] && [ ! -r "$pwfile" ]; then
+  echo
+  echo "This host encrypts the disk. Choose a passphrase (it also becomes the TPM2"
+  echo "recovery passphrase). It is NEVER written to the installed system."
+  while :; do
+    printf "Enter a new disk-encryption passphrase: "
+    read -rs pw1 <"$TTY"; echo
+    printf "Confirm passphrase: "
+    read -rs pw2 <"$TTY"; echo
+    if [ -z "$pw1" ]; then
+      echo "error: passphrase must not be empty." >&2
+    elif [ "$pw1" != "$pw2" ]; then
+      echo "error: passphrases did not match." >&2
+    else
+      break
+    fi
+  done
+  ( umask 077; mkdir -p "$(dirname "$pwfile")"; printf '%s' "$pw1" >"$pwfile" )
+  unset pw1 pw2
+  # Shred the passphrase file whenever the installer exits (success, error, or
+  # Ctrl-C) so it never lingers on the ISO's tmpfs.
+  trap 'shred -u "'"$pwfile"'" 2>/dev/null || rm -f "'"$pwfile"'"' EXIT
+fi
+
 echo
 echo "Installing ${FLAKE}#${host} onto ${device} ..."
 # disko-install isn't on the live ISO's PATH, so fetch and run it via `nix run`.
 # `--disk main <device>` overrides the placeholder device in the config.
 #
-# Redirect stdin from $TTY: with encryption enabled, disko shells out to
-# `cryptsetup luksFormat`, which prompts for the new passphrase on its stdin.
-# Under `curl … | sudo bash` our stdin is the piped script (already at EOF), so
-# without this the passphrase prompt gets empty input and never pauses — the
-# install fails instead of letting you type a passphrase. $TTY is the keyboard.
-exec nix run 'github:nix-community/disko/latest#disko-install' -- \
+# Redirect stdin from $TTY: when no passwordFile was configured (plain interactive
+# encryption), disko shells out to `cryptsetup luksFormat`, which prompts for the
+# passphrase on its stdin. Under `curl … | sudo bash` our stdin is the piped
+# script (already at EOF), so without this the prompt gets empty input and never
+# pauses. $TTY is the keyboard. Harmless when we supplied a passwordFile above
+# (disko then reads the file and prompts for nothing).
+#
+# Not `exec` (unlike before): control must return here so the TPM2 step can run
+# once disko-install has formatted and mounted the encrypted containers.
+nix run 'github:nix-community/disko/latest#disko-install' -- \
   --flake "${FLAKE}#${host}" --disk "${DISK_NAME}" "$device" "$@" <"$TTY"
+
+# ---- TPM2 auto-unlock enrollment -------------------------------------------
+# Only when the chosen host opts in (itera.disko.encryption.tpm2.enable). The
+# LUKS containers were just formatted with the passphrase above; enrolling the
+# TPM2 keyslot now — on the target hardware, against the live PCRs (PCR 7 = Secure
+# Boot state, unchanged between ISO and installed system) — means the FIRST boot
+# unlocks with no prompt and no separate first-boot step.
+if [ "$tpm2_enabled" = "true" ]; then
+  pcrs="$(cfg_attr encryption.tpm2.pcrs)"
+
+  # Enroll every present container: root always, swap only when a swap partition
+  # is declared. disko labels the raw partitions disk-<disk>-<part>; cryptenroll
+  # writes the TPM2 token into the LUKS header on those, not the mapper devices.
+  targets=("/dev/disk/by-partlabel/disk-${DISK_NAME}-root")
+  [ -n "$(cfg_attr swapSize)" ] && targets+=("/dev/disk/by-partlabel/disk-${DISK_NAME}-swap")
+  command -v udevadm >/dev/null && udevadm settle || true
+
+  if [ -n "$pwfile" ] && [ -r "$pwfile" ]; then
+    echo
+    echo "Enrolling TPM2 (PCRs ${pcrs}) so this host unlocks without a passphrase ..."
+    for t in "${targets[@]}"; do
+      if [ -e "$t" ]; then
+        systemd-cryptenroll --unlock-key-file="$pwfile" --wipe-slot=tpm2 \
+          --tpm2-device=auto --tpm2-pcrs="$pcrs" "$t"
+      else
+        echo "warning: $t not found; skipping TPM2 enrollment for it." >&2
+      fi
+    done
+  else
+    echo
+    echo "NOTE: TPM2 auto-unlock is enabled but no readable encryption.passwordFile" >&2
+    echo "      was found, so enrollment can't run here. After the first boot, run" >&2
+    echo "      once:  sudo itera-tpm2-enroll" >&2
+  fi
+fi

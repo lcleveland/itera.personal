@@ -56,7 +56,34 @@ accept-flake-config = true" \
   --flake 'github:lcleveland/itera.personal#dream' \
   --disk main /dev/nvme0n1
 ```
+
+For `framework` (encrypted), first write the passphrase to the path its config
+expects, then install, then enroll the TPM2 keyslot — this is exactly what
+`install.sh` automates:
+
+```sh
+(umask 077; printf '%s' 'your-passphrase' > /tmp/itera-luks.key)
+sudo env NIX_CONFIG="extra-experimental-features = nix-command flakes
+accept-flake-config = true" \
+  nix run 'github:nix-community/disko/latest#disko-install' -- \
+  --flake 'github:lcleveland/itera.personal#framework' \
+  --disk main /dev/nvme0n1
+sudo systemd-cryptenroll --unlock-key-file=/tmp/itera-luks.key --wipe-slot=tpm2 \
+  --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-main-root
+sudo systemd-cryptenroll --unlock-key-file=/tmp/itera-luks.key --wipe-slot=tpm2 \
+  --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-main-swap
+shred -u /tmp/itera-luks.key
+```
 </details>
+
+On `framework` (which encrypts the disk), the installer **prompts for a new
+encryption passphrase** before formatting, then enrolls the machine's TPM2 so
+subsequent boots unlock with no prompt — the passphrase you typed stays as the
+recovery fallback. There is no post-install enrollment step. Re-run
+`sudo itera-tpm2-enroll` only after a firmware or Secure Boot change (which
+invalidates the sealed PCR state). Security caveat (see
+[hosts/framework.nix](hosts/framework.nix)): without `itera.secureBoot`, TPM
+unlock protects a *pulled* disk but not a thief booting the laptop.
 
 After it finishes:
 
