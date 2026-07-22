@@ -27,6 +27,22 @@
     disko.device = "/dev/disk/by-id/CHANGE-ME-disko-install-overrides-this";
     disko.swapSize = "32G"; # >= RAM for hibernation
 
+    # Full-disk encryption (LUKS): wraps the btrfs root AND the swap partition, so
+    # everything at rest — /, /nix, /persist, and the hibernation image in swap —
+    # is encrypted; only the ESP stays readable for firmware. Both containers share
+    # one passphrase, so itera's systemd initrd unlocks both with a SINGLE prompt at
+    # boot. Opt-in and off by default upstream (it changes the on-disk format and
+    # asks for a passphrase every boot), so enable it explicitly here.
+    #
+    # passwordFile stays null: `disko-install` (via install.sh) prompts for a new
+    # passphrase interactively while formatting — no key ever lands on disk.
+    #
+    # NOTE: leaving itera.hardware.initrd.usbSupport at its default (encryption
+    # auto-turns it on). The Framework 16's built-in keyboard is internally
+    # USB-connected, so the initrd needs USB HID modules to type the passphrase —
+    # do NOT override usbSupport back to false here, or early boot has no keyboard.
+    disko.encryption.enable = true;
+
     fingerprint.enable = true; # on by default; explicit for clarity
     printing.enable = true; # itera default: hplipWithPlugin + mDNS + GUI (matches eiros work)
 
