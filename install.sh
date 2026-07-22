@@ -163,5 +163,11 @@ echo
 echo "Installing ${FLAKE}#${host} onto ${device} ..."
 # disko-install isn't on the live ISO's PATH, so fetch and run it via `nix run`.
 # `--disk main <device>` overrides the placeholder device in the config.
+#
+# Redirect stdin from $TTY: with encryption enabled, disko shells out to
+# `cryptsetup luksFormat`, which prompts for the new passphrase on its stdin.
+# Under `curl … | sudo bash` our stdin is the piped script (already at EOF), so
+# without this the passphrase prompt gets empty input and never pauses — the
+# install fails instead of letting you type a passphrase. $TTY is the keyboard.
 exec nix run 'github:nix-community/disko/latest#disko-install' -- \
-  --flake "${FLAKE}#${host}" --disk "${DISK_NAME}" "$device" "$@"
+  --flake "${FLAKE}#${host}" --disk "${DISK_NAME}" "$device" "$@" <"$TTY"
