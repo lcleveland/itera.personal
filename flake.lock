@@ -144,6 +144,22 @@
         "type": "github"
       }
     },
+    "dms-ipindicator": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782327124,
+        "narHash": "sha256-nbNS00WCSyLfaxT47xSS17GosZK49sbLIw75rkZmgr8=",
+        "owner": "hthienloc",
+        "repo": "dms-ipIndicator",
+        "rev": "f9761382c4b8504615e749dea48fd545e24e8fd9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hthienloc",
+        "repo": "dms-ipIndicator",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -361,6 +377,7 @@
         "dank-greeter": "dank-greeter",
         "disko": "disko",
         "dms": "dms",
+        "dms-ipindicator": "dms-ipindicator",
         "flake-parts": "flake-parts",
         "git-hooks": "git-hooks",
         "hjem": [
@@ -381,11 +398,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1784828059,
-        "narHash": "sha256-nluAlcvw57t2rhmkmXCfFyd4W1IjVpvvCqfz+JHw6BA=",
+        "lastModified": 1784834839,
+        "narHash": "sha256-Zm2gjHqS6HHFlgr5ljAXtrdwZynqGcfGznGfAKpIbSA=",
         "owner": "lcleveland",
         "repo": "itera",
-        "rev": "a3192b8d44145377bd8f16ef365a75633c014de9",
+        "rev": "953953e093bf74430837371f1de925720fecf1c1",
         "type": "github"
       },
       "original": {
