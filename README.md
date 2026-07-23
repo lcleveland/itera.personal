@@ -13,9 +13,10 @@ mango/DankMaterialShell desktop).
 
 Both use itera's declarative disk layout (`disko`) with a tmpfs root
 (`impermanence`) — **installing wipes the target disk.** The target disk is
-chosen at install time with `disko-install --disk main /dev/<disk>`; the
-`itera.disko.device` value in the host files is a fail-safe placeholder that the
-install command overrides, so you never edit the repo to install.
+chosen at install time (the `#installer` package below passes `--disk main
+/dev/<disk>`); the `itera.disko.device` value in the host files is a fail-safe
+placeholder that the install command overrides, so you never edit the repo to
+install.
 
 ## User & password
 
@@ -27,61 +28,38 @@ with `passwd`.** A secrets-managed password (e.g. agenix +
 ## Installing from the live ISO
 
 Boot the official [NixOS ISO](https://nixos.org/download) (minimal or graphical),
-get online (`nmcli` on the graphical ISO, or plug in Ethernet), then run the
-installer straight from GitHub — **nothing to clone or edit:**
+get online (`nmcli` on the graphical ISO, or plug in Ethernet), then run this
+flake's `installer` package — **nothing to clone or edit:**
 
 ```sh
-curl -sSL https://raw.githubusercontent.com/lcleveland/itera.personal/main/install.sh | sudo bash
+sudo nix run github:lcleveland/itera.personal#installer
 ```
 
-[install.sh](install.sh) prompts you to **pick the host** (`dream` / `framework`)
-and the **disk**, confirms the destructive wipe, then hands off to `disko-install`
-(partition + format + mount + `nixos-install`, in one step). Skip either prompt by
-passing them as arguments:
+The installer is built from itera upstream's `itera.lib.mkInstaller` (wired up in
+[flake.nix](flake.nix)); it prompts you to **pick the host** (`dream` /
+`framework`) and the **disk**, confirms the destructive wipe, then hands off to
+`disko-install` (partition + format + mount + `nixos-install`, in one step). Skip
+either prompt by passing them as arguments:
 
 ```sh
-curl -sSL .../install.sh | sudo bash -s -- dream               # host given, pick disk
-curl -sSL .../install.sh | sudo bash -s -- dream /dev/nvme0n1  # fully non-interactive
+sudo nix run github:lcleveland/itera.personal#installer -- framework               # host given, pick disk
+sudo nix run github:lcleveland/itera.personal#installer -- framework /dev/nvme0n1  # fully non-interactive
 ```
 
-<details><summary>Manual equivalent (no script)</summary>
-
-`--disk main /dev/<disk>` overrides the placeholder device in the config, so the
-repo needs no editing:
+To install from a local clone instead of the GitHub remote, point the flake ref
+at the checkout:
 
 ```sh
-sudo env NIX_CONFIG="extra-experimental-features = nix-command flakes
-accept-flake-config = true" \
-  nix run 'github:nix-community/disko/latest#disko-install' -- \
-  --flake 'github:lcleveland/itera.personal#dream' \
-  --disk main /dev/nvme0n1
+sudo ITERA_INSTALL_FLAKE=. nix run .#installer
 ```
 
-For `framework` (encrypted), first write the passphrase to the path its config
-expects, then install, then enroll the TPM2 keyslot — this is exactly what
-`install.sh` automates:
-
-```sh
-(umask 077; printf '%s' 'your-passphrase' > /tmp/itera-luks.key)
-sudo env NIX_CONFIG="extra-experimental-features = nix-command flakes
-accept-flake-config = true" \
-  nix run 'github:nix-community/disko/latest#disko-install' -- \
-  --flake 'github:lcleveland/itera.personal#framework' \
-  --disk main /dev/nvme0n1
-sudo systemd-cryptenroll --unlock-key-file=/tmp/itera-luks.key --wipe-slot=tpm2 \
-  --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-main-root
-sudo systemd-cryptenroll --unlock-key-file=/tmp/itera-luks.key --wipe-slot=tpm2 \
-  --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-main-swap
-shred -u /tmp/itera-luks.key
-```
-</details>
-
-On `framework` (which encrypts the disk), the installer **prompts for a new
-encryption passphrase** before formatting, then enrolls the machine's TPM2 so
-subsequent boots unlock with no prompt — the passphrase you typed stays as the
-recovery fallback. There is no post-install enrollment step. Re-run
-`sudo itera-tpm2-enroll` only after a firmware or Secure Boot change (which
-invalidates the sealed PCR state). Security caveat (see
+On `framework` (which encrypts the disk), the installer reads the FDE policy from
+the host's evaluated `itera.disko.encryption.*` config and drives it hands-free:
+it **prompts for a new encryption passphrase** before formatting, then enrolls the
+machine's TPM2 in the same pass so subsequent boots unlock with no prompt — the
+passphrase you typed stays as the recovery fallback. There is no post-install
+enrollment step. Re-run `sudo itera-tpm2-enroll` only after a firmware or Secure
+Boot change (which invalidates the sealed PCR state). Security caveat (see
 [hosts/framework.nix](hosts/framework.nix)): without `itera.secureBoot`, TPM
 unlock protects a *pulled* disk but not a thief booting the laptop.
 

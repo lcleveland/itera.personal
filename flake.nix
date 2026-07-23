@@ -54,5 +54,24 @@
         dream = mkHost ./hosts/dream.nix;
         framework = mkHost ./hosts/framework.nix;
       };
+
+      # One installer covering every host in this flake, from itera's upstream
+      # `mkInstaller` builder — this replaces the hand-maintained install.sh
+      # (which was the prototype itera upstreamed as its own cli/install.sh).
+      # Run it from a live ISO; it picks a host + disk, confirms the wipe, and
+      # hands off to disko-install. All FDE behaviour is read from the chosen
+      # host's EVALUATED config, so the hands-free path is fully driven by
+      # `itera.disko.encryption.*` in hosts/*.nix: on `framework` it prompts for
+      # the LUKS passphrase, then enrolls the TPM2 keyslot in the same pass so
+      # the first boot is already passwordless — no post-install step, no
+      # duplicated encryption policy in a script here.
+      #
+      #   sudo nix run github:lcleveland/itera.personal#installer            # menus
+      #   sudo nix run github:lcleveland/itera.personal#installer -- framework /dev/nvme0n1
+      #   sudo ITERA_INSTALL_FLAKE=. nix run .#installer                     # local clone
+      packages.x86_64-linux.installer =
+        itera.lib.mkInstaller (import nixpkgs { system = "x86_64-linux"; }) {
+          flake = "github:lcleveland/itera.personal";
+        };
     };
 }
