@@ -72,7 +72,8 @@
     keyboard.layout = "us";
     keyboard.variant = "colemak_dh";
 
-    # Three-monitor layout (translated from eiros.hardware.framework monitors.nix).
+    # Three-monitor layout: built-in panel, upside-down Lenovo T24i-10, and a
+    # 49" DP-11 super-ultrawide (5120x1440 @165) to the right.
     programs.mango.monitors = {
       "eDP-1" = {
         width = 2560;
@@ -87,11 +88,12 @@
         refresh = 60;
         x = 2560;
         y = 0;
+        transform = "180"; # panel physically mounted upside down
       };
       "DP-11" = {
-        width = 1920;
-        height = 1080;
-        refresh = 60;
+        width = 5120;
+        height = 1440;
+        refresh = 165;
         x = 4480;
         y = 0;
       };
