@@ -73,26 +73,24 @@
     keyboard.variant = "colemak_dh";
 
     # Monitor layout (origin top-left, +x right / +y down):
-    #   eDP-1 laptop on the left, to the left of the ultrawide.
+    #   eDP-1 laptop on the left, bottom-aligned with the ultrawide.
     #   DP-11 49" super-ultrawide (5120x1440 @165) to the right of the laptop.
-    #   DP-10 Lenovo T24i-10 (upside down) overlays the ultrawide's top-left
-    #     corner (it physically sits in front of that region); the outputs share
-    #     coordinates there, so the covered area renders on both but is only
-    #     visible on the Lenovo.
+    #   DP-10 Lenovo T24i-10 (upside down) flush above the ultrawide's top-left
+    #     corner (edges meet at y=1080, no overlap).
     programs.mango.monitors = {
       "eDP-1" = {
         width = 2560;
         height = 1600;
         refresh = 165;
         x = 0;
-        y = 0;
+        y = 920; # bottom-aligned with DP-11 (1080 + 1440 - 1600)
       };
       "DP-10" = {
         width = 1920;
         height = 1080;
         refresh = 60;
-        x = 2560; # same top-left corner as DP-11 (overlays it)
-        y = 0;
+        x = 2560; # left-aligned with DP-11
+        y = 0; # sits directly above DP-11 (bottom edge at y=1080)
         transform = "180"; # panel physically mounted upside down
       };
       "DP-11" = {
@@ -100,7 +98,7 @@
         height = 1440;
         refresh = 165;
         x = 2560; # right of the laptop
-        y = 0;
+        y = 1080; # below DP-10
       };
     };
     # nvidia stays OFF (itera.nvidia is opt-in / default false) — matches eiros.
