@@ -72,8 +72,13 @@
     keyboard.layout = "us";
     keyboard.variant = "colemak_dh";
 
-    # Three-monitor layout: built-in panel, upside-down Lenovo T24i-10, and a
-    # 49" DP-11 super-ultrawide (5120x1440 @165) to the right.
+    # Monitor layout (origin top-left, +x right / +y down):
+    #   eDP-1 laptop on the left, to the left of the ultrawide.
+    #   DP-11 49" super-ultrawide (5120x1440 @165) to the right of the laptop.
+    #   DP-10 Lenovo T24i-10 (upside down) overlays the ultrawide's top-left
+    #     corner (it physically sits in front of that region); the outputs share
+    #     coordinates there, so the covered area renders on both but is only
+    #     visible on the Lenovo.
     programs.mango.monitors = {
       "eDP-1" = {
         width = 2560;
@@ -86,7 +91,7 @@
         width = 1920;
         height = 1080;
         refresh = 60;
-        x = 2560;
+        x = 2560; # same top-left corner as DP-11 (overlays it)
         y = 0;
         transform = "180"; # panel physically mounted upside down
       };
@@ -94,7 +99,7 @@
         width = 5120;
         height = 1440;
         refresh = 165;
-        x = 4480;
+        x = 2560; # right of the laptop
         y = 0;
       };
     };
