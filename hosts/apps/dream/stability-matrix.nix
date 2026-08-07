@@ -33,8 +33,20 @@ let
     # "failed to map segment from shared object" and the app dies before its window
     # appears. Redirect the bundle extraction to $XDG_RUNTIME_DIR (/run/user/$UID,
     # which is exec-capable). `profile` is sourced inside the FHS run wrapper.
+    # The portable CPython StabilityMatrix downloads (python-build-standalone) has
+    # OpenSSL built with openssldir=/etc/ssl, so it only consults /etc/ssl/cert.pem
+    # (absent on NixOS) and /etc/ssl/certs as a hashed CApath (NixOS ships a single
+    # bundle there, not hash-named symlinks) — leaving it with no trust anchors.
+    # Anything using plain urllib instead of certifi then fails, e.g. installing a
+    # ComfyUI custom node: CERTIFICATE_VERIFY_FAILED / unable to get local issuer
+    # certificate. The FHS wrapper binds the host /etc/ssl/certs, so just point
+    # OpenSSL (and friends) at the system bundle; child processes inherit it.
     profile = ''
       export DOTNET_BUNDLE_EXTRACT_BASE_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/StabilityMatrix-dotnet"
+      export SSL_CERT_FILE="''${SSL_CERT_FILE:-/etc/ssl/certs/ca-certificates.crt}"
+      export REQUESTS_CA_BUNDLE="$SSL_CERT_FILE"
+      export CURL_CA_BUNDLE="$SSL_CERT_FILE"
+      export GIT_SSL_CAINFO="$SSL_CERT_FILE"
     '';
 
     # Extra runtime libs the bundled .NET/Avalonia app and its child processes expect.
