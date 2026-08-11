@@ -398,11 +398,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1786470016,
-        "narHash": "sha256-Aici+9A80cDFPX8RmnLPvak/W8qOHk5V8ZeByAx4fKM=",
+        "lastModified": 1786473240,
+        "narHash": "sha256-7WmogCC8LTZxsr9R0ud78Nd/pdhNTuVyfSYQUJZe6rI=",
         "owner": "lcleveland",
         "repo": "itera",
-        "rev": "b83406294baf799cfd06894acd35fcf730399e5e",
+        "rev": "00680254e25eda0ff79765997a4b91f440e534b1",
         "type": "github"
       },
       "original": {
