@@ -16,6 +16,31 @@
     networking.hostName = "DREAM";
     hardware.cpu = "amd";
 
+    # Force-load snd_usb_audio in stage 2 so it is resident BEFORE the onboard
+    # ASUS USB audio device (0b05:1b7c on usb 1-7) enumerates. That device
+    # carries every real sink and source on this box — Speakers, Front
+    # Headphones, S/PDIF, and the Line Input mic — so until its card registers
+    # there is no audio and no microphone at all.
+    #
+    # Without this it is a race, and losing it costs ~50 s. Compare boots on the
+    # same kernel (7.1.8):
+    #   • module loaded BEFORE the device appears → card up ~1 s later, clean.
+    #   • device appears BEFORE the module (udev autoloads it ~17 s in) → the
+    #     probe then burns ~50 s in `parse_audio_format_rates_v2v3(): unable to
+    #     retrieve number of sample rates` / `cannot get freq (v2/v3): err -110`
+    #     (ETIMEDOUT) before `snd-usb-audio` finally registers.
+    # On a lost race the card lands ~66 s after boot but the session starts at
+    # ~31 s, which is the "no audio devices or mic for a while after logging in"
+    # window. stage-2 systemd-modules-load runs ~1 s before usb 1-7 is detected,
+    # so listing the module here wins the race deterministically.
+    #
+    # NOTE: this is a workaround, not the root cause. A device on usb1-port8
+    # fails enumeration on every boot (`device descriptor read/64, error -110`
+    # → `unable to enumerate USB device`) and its retry storm overlaps the audio
+    # probe on the same root hub. Physically removing whatever is on port 8
+    # (controller 0000:0d:00.0, same hub as the audio device) is the real fix.
+    hardware.kernelModules = [ "snd_usb_audio" ];
+
     # This host is nixosConfigurations.dream; the hostname (DREAM) differs from
     # the flake attribute, so set it explicitly (else `itera update`/`rebuild`
     # would pass `--hostname DREAM` and miss `#dream`).
