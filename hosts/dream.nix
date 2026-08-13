@@ -84,36 +84,43 @@
   };
   # SKIPPED (per user): MT7927 initrd systemd-udevd TimeoutStopSec BT boot-hang hack.
 
-  # Nothing on usb1-port8 ever enumerates, but something there keeps
-  # half-answering, so the kernel runs its full retry/power-cycle cycle every
-  # boot: `device descriptor read/64, error -110` → `Device not responding to
-  # setup address` → `attempt power cycle` → `unable to enumerate USB device`.
-  # That cycle takes a very consistent 72–77 s on this box (measured over four
-  # boots) and it runs on the SAME xHCI controller (0000:0d:00.0) as the onboard
-  # USB audio device on 1-7.
+  # Nothing on usb1-port8 has ever enumerated, but something there keeps
+  # half-answering, so every boot the kernel grinds through its retry cycle:
+  # `device descriptor read/64, error -110` → `Device not responding to setup
+  # address` → `attempt power cycle` → `unable to enumerate USB device`. That
+  # port sits on the SAME xHCI controller (0000:0d:00.0) as the onboard USB
+  # audio device on 1-7, which carries every real sink and source on this box —
+  # Speakers, Front Headphones, S/PDIF, and the Line Input mic.
   #
-  # The audio card registers ~1 s after port 8 finally gives up, every time, so
-  # the USB sinks and the Line Input mic are missing for ~45 s after login. The
+  # The audio card registers ~1 s after port 8 goes quiet, measured across three
+  # boots, so those devices are missing for most of a minute after login. The
   # probe itself is not the cost: re-authorizing 1-7 while port 8 is idle brings
-  # the card back in 4 s with no errors at all. Roughly 66 s of the boot-time
-  # delay is port 8 blocking a healthy sibling, most likely by monopolizing the
-  # controller's command ring with timed-out Address Device commands.
+  # the card back in 4 s with no errors at all.
   #
-  # `early_stop` makes the hub give up after the FIRST failed attempt instead of
-  # the whole cycle. Deliberately not `disable`: early_stop is non-destructive —
-  # a working device plugged in later still enumerates normally — and this
-  # board's ACPI port data is not trustworthy (port 7, which carries the audio
-  # device, is also reported `connect_type = "not used"`), so there is no
-  # reliable basis for declaring the port dead.
+  # `early_stop` was tried first and is too weak. Per the kernel ABI docs it
+  # "limits each port to just two initialization attempts" — a cap, not an off
+  # switch. It cut the cycle 64 s → 43 s and the outage shrank in lockstep,
+  # which is what confirmed the causal link, but 43 s is still 43 s. `disable`
+  # is the actual off switch: devices on the port "will not be detected,
+  # initialized, or enumerated".
+  #
+  # Both are set. `disable` does the work; `early_stop` stays as a fallback that
+  # still caps the damage at two attempts if a hub ever ignores `disable`.
+  #
+  # This turns port 8 OFF. Justified because nothing has ever enumerated there
+  # across every boot on record, and it is one config line to revert. Note the
+  # board's ACPI port data is NOT the justification and cannot be trusted: port
+  # 7, which carries the audio device, is also reported
+  # `connect_type = "not used"`.
   #
   # Has to be a systemd unit, NOT a udev rule: USB port devices have an empty
   # `uevent` and no subsystem, and udev's database holds zero `usb_port` entries,
-  # so there is nothing for a rule to match. Path is anchored on the controller's
-  # stable PCI address and globs the USB bus number, which is not fixed.
+  # so there is nothing for a rule to match. The path is anchored on the
+  # controller's stable PCI address and globs the USB bus number, which is not.
   #
   # The real fix is physical — find whatever is on that port and unplug it.
-  systemd.services.usb-port8-early-stop = {
-    description = "Stop usb1-port8 retrying a device that never enumerates";
+  systemd.services.usb-port8-disable = {
+    description = "Disable usb1-port8, which never enumerates and stalls USB audio";
     wantedBy = [ "sysinit.target" ];
     after = [ "systemd-modules-load.service" ];
     path = [ pkgs.coreutils ]; # seq/sleep, not in a unit's default PATH
@@ -121,15 +128,20 @@
       Type = "oneshot";
       RemainAfterExit = true;
       # Polls because the port only exists once xhci_hcd has bound and
-      # registered the root hub, which races this unit. Exits 0 either way: a
-      # missing port must never fail the boot.
-      ExecStart = pkgs.writeShellScript "usb-port8-early-stop" ''
+      # registered the root hub, which races this unit. It has to win that race:
+      # `disable` only helps if it lands before the port starts enumerating (on
+      # the last boot the unit wrote at +8 s and port 8 connected at +13 s).
+      # Exits 0 either way — a missing port must never fail the boot.
+      ExecStart = pkgs.writeShellScript "usb-port8-disable" ''
         set -u
         for _ in $(seq 1 250); do
-          for f in /sys/bus/pci/devices/0000:0d:00.0/usb*/*-0:1.0/usb*-port8/early_stop; do
-            if [ -w "$f" ]; then
-              echo 1 > "$f"
-              echo "early_stop set on $f"
+          for d in /sys/bus/pci/devices/0000:0d:00.0/usb*/*-0:1.0/usb*-port8; do
+            if [ -w "$d/disable" ]; then
+              # Fallback first, so the cap is in place even if `disable` is a
+              # no-op on this hub.
+              [ -w "$d/early_stop" ] && echo 1 > "$d/early_stop"
+              echo 1 > "$d/disable"
+              echo "disabled $d (early_stop=$(cat "$d/early_stop" 2>/dev/null))"
               exit 0
             fi
           done
