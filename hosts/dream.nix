@@ -1,5 +1,42 @@
 # dream — AMD desktop (eiros hostname DREAM).
-{ pkgs, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
+let
+  # The onboard MT7927 (MT6639 "Filogic 380") is ONE M.2 module exposing two
+  # functions: WiFi as PCIe (14c3:7927 at 0000:09:00.0) and Bluetooth as USB,
+  # and the USB half is what sits on usb1-port8.
+  #
+  # Kernel 7.1.8 already has full in-tree Bluetooth support for it — btmtk.ko
+  # references `mediatek/mt7927/BT_RAM_CODE_MT6639_2_1_hdr.bin`, MT6639 and
+  # mt7927 by name, and btusb matches MediaTek's 0489 vendor class. The ONLY
+  # missing piece is the firmware blob itself: linux-firmware ships the two
+  # MT7927 *WiFi* blobs (WIFI_RAM_CODE_MT6639_2_1.bin,
+  # WIFI_MT6639_PATCH_MCU_2_1_hdr.bin) but not the Bluetooth one.
+  #
+  # Without it btusb retries the firmware load, wedges the BT function's onboard
+  # state, and the wedged function then half-answers USB enumeration — the
+  # `device descriptor read/64, error -110` storm on usb1-port8 that stalls the
+  # whole root hub and, with it, the onboard USB audio card on 1-7.
+  #
+  # LICENSING: this blob is NOT redistributable-approved. linux-firmware MR !946
+  # ("mediatek: Add MT6639 (MT7927) Bluetooth firmware") was CLOSED without
+  # merging, pending MediaTek sign-off, and upstream `main` still carries only
+  # the WiFi blobs. This pins the file from that MR's source branch. It is fine
+  # for a personal host with this exact hardware; do not vendor it anywhere
+  # public. Re-check whether it has landed upstream before carrying this
+  # forward — if linux-firmware ever ships it, delete this whole block.
+  mt7927BtFirmware = pkgs.runCommand "mt7927-bt-firmware" { } ''
+    install -Dm444 ${
+      pkgs.fetchurl {
+        url = "https://gitlab.com/api/v4/projects/80012974/repository/files/mediatek%2Fmt7927%2FBT_RAM_CODE_MT6639_2_1_hdr.bin/raw?ref=77ad2a92acf2ac3e5ea47432b43d925ff99db909";
+        hash = "sha256-ZpxcmaDFnIXBKF09G4sxkVwtMTQaIkT07dy/1g/7vHY=";
+      }
+    } $out/lib/firmware/mediatek/mt7927/BT_RAM_CODE_MT6639_2_1_hdr.bin
+  '';
+in
 {
   # Dream-only apps, migrated from the old eiros.users.personal repo.
   imports = [
@@ -84,72 +121,32 @@
   };
   # SKIPPED (per user): MT7927 initrd systemd-udevd TimeoutStopSec BT boot-hang hack.
 
-  # Nothing on usb1-port8 has ever enumerated, but something there keeps
-  # half-answering, so every boot the kernel grinds through its retry cycle:
-  # `device descriptor read/64, error -110` → `Device not responding to setup
-  # address` → `attempt power cycle` → `unable to enumerate USB device`. That
-  # port sits on the SAME xHCI controller (0000:0d:00.0) as the onboard USB
-  # audio device on 1-7, which carries every real sink and source on this box —
-  # Speakers, Front Headphones, S/PDIF, and the Line Input mic.
+  # Ship the missing MT7927 Bluetooth firmware (see the `let` block above).
+  # This is the real fix for the long-standing "no audio or mic for ~45 s after
+  # login" problem: with the blob present btusb can actually initialise the BT
+  # function instead of wedging it, so usb1-port8 enumerates normally and stops
+  # holding the root hub's device lock while the USB audio card waits to
+  # register.
   #
-  # The audio card registers ~1 s after port 8 goes quiet, measured across three
-  # boots, so those devices are missing for most of a minute after login. The
-  # probe itself is not the cost: re-authorizing 1-7 while port 8 is idle brings
-  # the card back in 4 s with no errors at all.
+  # NOTE: a wedged MT6639 survives a normal reboot. If the enumeration errors
+  # persist after rebuilding, do a full power cycle — shut down, kill the PSU
+  # switch or pull the cord for 10+ seconds — to reset the BT function's onboard
+  # state. That is a documented quirk of this chip, not a config problem.
   #
-  # `early_stop` was tried first and is too weak. Per the kernel ABI docs it
-  # "limits each port to just two initialization attempts" — a cap, not an off
-  # switch. It cut the cycle 64 s → 43 s and the outage shrank in lockstep,
-  # which is what confirmed the causal link, but 43 s is still 43 s. `disable`
-  # is the actual off switch: devices on the port "will not be detected,
-  # initialized, or enumerated".
-  #
-  # Both are set. `disable` does the work; `early_stop` stays as a fallback that
-  # still caps the damage at two attempts if a hub ever ignores `disable`.
-  #
-  # This turns port 8 OFF. Justified because nothing has ever enumerated there
-  # across every boot on record, and it is one config line to revert. Note the
-  # board's ACPI port data is NOT the justification and cannot be trusted: port
-  # 7, which carries the audio device, is also reported
-  # `connect_type = "not used"`.
-  #
-  # Has to be a systemd unit, NOT a udev rule: USB port devices have an empty
-  # `uevent` and no subsystem, and udev's database holds zero `usb_port` entries,
-  # so there is nothing for a rule to match. The path is anchored on the
-  # controller's stable PCI address and globs the USB bus number, which is not.
-  #
-  # The real fix is physical — find whatever is on that port and unplug it.
-  systemd.services.usb-port8-disable = {
-    description = "Disable usb1-port8, which never enumerates and stalls USB audio";
-    wantedBy = [ "sysinit.target" ];
-    after = [ "systemd-modules-load.service" ];
-    path = [ pkgs.coreutils ]; # seq/sleep, not in a unit's default PATH
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      # Polls because the port only exists once xhci_hcd has bound and
-      # registered the root hub, which races this unit. It has to win that race:
-      # `disable` only helps if it lands before the port starts enumerating (on
-      # the last boot the unit wrote at +8 s and port 8 connected at +13 s).
-      # Exits 0 either way — a missing port must never fail the boot.
-      ExecStart = pkgs.writeShellScript "usb-port8-disable" ''
-        set -u
-        for _ in $(seq 1 250); do
-          for d in /sys/bus/pci/devices/0000:0d:00.0/usb*/*-0:1.0/usb*-port8; do
-            if [ -w "$d/disable" ]; then
-              # Fallback first, so the cap is in place even if `disable` is a
-              # no-op on this hub.
-              [ -w "$d/early_stop" ] && echo 1 > "$d/early_stop"
-              echo 1 > "$d/disable"
-              echo "disabled $d (early_stop=$(cat "$d/early_stop" 2>/dev/null))"
-              exit 0
-            fi
-          done
-          sleep 0.1
-        done
-        echo "usb1-port8 never appeared; nothing to do" >&2
-        exit 0
-      '';
-    };
-  };
+  # The previous `usb1-port8` early_stop workaround is deliberately GONE. It only
+  # ever halved the delay (64 s → 43 s, since the kernel ABI caps `early_stop` at
+  # two initialisation attempts), and now that the port is meant to enumerate
+  # successfully it would be actively harmful: a port marked early_stop that
+  # fails once "will ignore all future connections until this attribute is
+  # cleared", which would lock out the Bluetooth radio after any transient
+  # failure.
+  hardware.firmware = [ mt7927BtFirmware ];
+
+  # Wi-Fi half of the same MT7927 module. Nothing in kernel 7.1.8 claims
+  # 14c3:7927, so the onboard radio never binds a driver and there is no wlan
+  # interface; this out-of-tree mt76 rebuild adds it. See the file header for
+  # what it patches and the maintenance expectations on a kernel bump.
+  boot.extraModulePackages = [
+    (pkgs.callPackage ./mt7927-mt76.nix { inherit (config.boot.kernelPackages) kernel; })
+  ];
 }
