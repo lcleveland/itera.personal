@@ -6,10 +6,11 @@
 #
 # The module + packaging live in github:lcleveland/netskope-client. Upstream has now
 # host-verified the parts that don't need tenant credentials — the package builds,
-# every binary's libraries resolve, and stagentd + the tray user service start — and
-# its VM test passes. Still unverified there: the enrollment handshake (needs the
-# tenant org key + auth token, see below), and the bind-mount peer-path fix, which
-# has only been exercised in the VM test against a stub package.
+# every binary's libraries resolve, stagentd starts, and the tray icon actually
+# registers in a live session — and its VM test passes. Still unverified there: the
+# enrollment handshake (needs the tenant org key + auth token, see below), and the
+# bind-mount peer-path fix, which has only been exercised in the VM test against a
+# stub package.
 {
   netskope,
   config,
@@ -47,10 +48,14 @@
     # `autoUpdate` is left at its default of false.
     hash = "sha256-lOAsV+/zV1KNZBraDw8qa7nL4SDu0GH3who7fgLhQTI=";
 
-    # Tray UI (stAgentUI + the per-user stagentapp service). This is a desktop
-    # host, and the tray is the only place the client surfaces its enrollment /
-    # steering status, so keep it — it costs a GTK+WebKit closure. It is wired to
-    # graphical-session.target; DankMaterialShell provides the StatusNotifier host.
+    # Tray UI — two per-user services, both wired to graphical-session.target:
+    # stagentapp (the watchdog / session IPC broker) and stagentui (the GTK tray icon
+    # itself). Upstream used to run only the watchdog and left starting the icon to
+    # XDG autostart or a hard-coded /usr/bin/gtk-launch, neither of which exists here,
+    # so nothing ever drew it; the icon now has its own unit. This is a desktop host
+    # and the tray is the only place the client surfaces its enrollment / steering
+    # status, so keep it — it costs a GTK+WebKit closure. DankMaterialShell provides
+    # the StatusNotifier host it registers against.
     enableTray = true;
 
     # SSL-inspection root CA. Netskope MITMs TLS, so once steering is live anything
