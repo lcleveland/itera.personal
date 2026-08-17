@@ -4,13 +4,19 @@
 # than hosts/common.nix, and the flake module comes in through specialArgs
 # (see flake.nix) instead of the every-host `modules` list.
 #
-# The module + packaging live in github:lcleveland/netskope-client. Upstream has now
-# host-verified the parts that don't need tenant credentials — the package builds,
-# every binary's libraries resolve, stagentd starts, and the tray icon actually
-# registers in a live session — and its VM test passes. Still unverified there: the
-# enrollment handshake (needs the tenant org key + auth token, see below), and the
-# bind-mount peer-path fix, which has only been exercised in the VM test against a
-# stub package.
+# The module + packaging live in github:lcleveland/netskope-client. Host-verified
+# there: the package builds, every binary's libraries resolve, stagentd starts, the
+# tray icon registers in a live session, the bind-mount peer-path fix lets stAgentCli
+# through the IPC check, and the enrollment handshake completes against this tenant.
+# Still unverified: what the daemon does after the branding file lands — its own
+# secure-enrollment (user cert) and traffic steering.
+#
+# Enrolling from NixOS needed four upstream fixes, one of which is broadly relevant:
+# the client verifies TLS with a compiled-in OpenSSL CApath of /etc/ssl/certs, and
+# NixOS puts no hashed <subject-hash>.<seq> symlinks there, so it finds zero trust
+# anchors and every request dies with "self-signed certificate in certificate chain".
+# The module now bind-mounts a rehashed trust dir over /etc/ssl/certs for its own
+# units. SSL_CERT_DIR / SSL_CERT_FILE / CURL_CA_BUNDLE do not help.
 {
   netskope,
   config,
@@ -73,34 +79,37 @@
     # Nix store and baked into the system CA bundle at build time. That's fine for a
     # certificate (public by nature) but means the file must exist at eval time.
 
-    # Declarative enrollment. LEFT UNCONFIGURED: it needs two tenant secrets that
-    # aren't in this repo — the org key (Windows `token=`) and the secure-enrollment
-    # auth token (Windows `enrollauthtoken=`), both from the admin console. Without
-    # them the client is installed and the daemon runs, but the device never enrolls
-    # — no tenant branding file is downloaded, and the tray/stAgentCli report it
-    # unenrolled.
-    #
-    # To turn it on, drop the two values into root-only files that survive the
-    # ephemeral root — /persist is the pragmatic spot (agenix is available through
-    # itera if these should instead be committed encrypted):
+    # Declarative enrollment. The two tenant secrets — the org key (Windows `token=`)
+    # and the secure-enrollment auth token (Windows `enrollauthtoken=`) — stay OUT of
+    # this repo, in root-only files that survive the ephemeral root (/persist is the
+    # pragmatic spot; agenix is available through itera if they should instead be
+    # committed encrypted). Create them before the first rebuild that enables this:
     #
     #   sudo install -d -m 0700 /persist/secrets
     #   printf %s '<org key>'    | sudo install -m 0400 /dev/stdin /persist/secrets/netskope-orgkey
     #   printf %s '<auth token>' | sudo install -m 0400 /dev/stdin /persist/secrets/netskope-authtoken
     #
-    # then uncomment:
+    # These options are `str`, not `path`, precisely so the values are read at runtime
+    # via systemd LoadCredential and never enter the store. Without the files,
+    # netskope-enroll.service fails on every boot (the daemon still starts — it only
+    # `wants` the enroll unit). The unit is self-verifying: it checks that a branding
+    # file actually landed and fails loudly rather than "succeeding" unenrolled.
     #
-    #   enrollment = {
-    #     orgKeyFile = "/persist/secrets/netskope-orgkey";
-    #     authTokenFile = "/persist/secrets/netskope-authtoken";
-    #   };
+    # `email` is not optional here, and it is what the tenant enrolls the device
+    # against. With neither email nor upn set, the client picks UPN mode and resolves
+    # the AD domain through `realm list` — which fails on this host, since it isn't
+    # domain-joined. (Verified against the live tenant: email mode returns
+    # "Successfully downloaded branding file by email id".)
     #
-    # These are `str`, not `path`, precisely so the secrets are read at runtime via
-    # systemd LoadCredential and never enter the store. Don't enable this before the
-    # files exist: netskope-enroll.service would fail on every boot (the daemon still
-    # starts, since it only `wants` the enroll unit). Once the files are in place the
-    # unit is self-verifying — it now checks that a branding file actually landed and
-    # fails loudly instead of "succeeding" with the client still unenrolled.
+    # Note also what is NOT set: tenantHost. Its default is the BARE tenant hostname,
+    # lselectric.goskope.com, which is correct — the client prefixes `addon-` itself.
+    # The Windows deployment string's `host=addon-lselectric.goskope.com` is the addon
+    # host and must not be pasted in here; upstream now asserts against the prefix.
+    enrollment = {
+      orgKeyFile = "/persist/secrets/netskope-orgkey";
+      authTokenFile = "/persist/secrets/netskope-authtoken";
+      email = "lcleveland@lselectric.com";
+    };
   };
 
   # The package installs everything under $out/opt/netskope/stagent and ships no
