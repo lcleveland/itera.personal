@@ -77,26 +77,39 @@
     #
     #   systemctl start stagentd     # and `stop` the moment the network misbehaves
     #
-    # Flip back to true once steering is understood — see the Steering section of the
-    # upstream README for the open leads (tunnel MTU taken raw from the physical
-    # interface, netlink route lookups failing during setup, DNS being steered on a
-    # systemd-resolved host).
+    # Steering is understood now: the cause was NixOS' strict reverse-path filter
+    # dropping every steered reply (they arrive on the sta0 tunnel while the route to
+    # their source is via wlp2s0), which upstream fixes by defaulting
+    # networking.firewall.checkReversePath to "loose". Measured here: with that one
+    # change, 90s of live steering with DNS and TCP up throughout, versus dead within
+    # 27s before it.
+    #
+    # This stays false anyway until the whole combination has been through one live
+    # session on this host, because the failure mode is a laptop that needs a reboot.
+    # Bring it up deliberately, with the harness that has its own backout:
+    #
+    #   ~/Documents/netskope-client/tools/steering-test.sh
+    #   systemctl start stagentd     # or by hand, and `stop` when it misbehaves
+    #
+    # Note the harness needs a live sudo/polkit session: stopping this daemon reliably
+    # means `systemctl stop --no-block` then `kill -s KILL`, and undoing its routing by
+    # hand, since a killed client cleans up nothing.
     autoStart = false;
 
-    # SSL-inspection root CA. Netskope MITMs TLS, so once steering is live anything
-    # that doesn't trust this CA sees certificate errors. Deliberately OFF until the
-    # tenant CA PEM is on disk — the installer does not ship it, so it can't be
-    # derived from the package. To enable: get nstenantcert.crt from the admin
-    # console (Settings -> Manage SSL Decryption, or copy it off an enrolled host —
-    # under this module's state relocation it lands in /var/lib/netskope/data/),
-    # place it somewhere persistent, then set:
+    # SSL-inspection CA. Netskope MITMs TLS, so once steering is live anything that
+    # doesn't trust this CA gets certificate errors — verified here: under steering
+    # example.com is served by CN=ns-swg.ca.lselectric.goskope.com, plain curl fails
+    # with "self-signed certificate in certificate chain", the same request with the
+    # tenant CA returns 200.
     #
-    #   trustCA = true;
-    #   caCertFile = "/persist/etc/netskope/nstenantcert.crt";
-    #
-    # NB: caCertFile is a `path`, so its contents are copied into the world-readable
-    # Nix store and baked into the system CA bundle at build time. That's fine for a
-    # certificate (public by nature) but means the file must exist at eval time.
+    # No caCertFile, deliberately. The certificate only exists as a file the client
+    # fetches at runtime into /var/lib/netskope/ca-anchors, and a NixOS trust store is
+    # assembled at build time — a runtime file cannot feed it, and under flakes it
+    # cannot even be read at eval ("access to absolute path ... is forbidden in pure
+    # evaluation mode"). Rather than commit this tenant's inspection CA into a public
+    # repository, upstream assembles the bundle at runtime and bind-mounts it over
+    # /etc/ssl/certs, rebuilding when the tenant rotates. So this is the whole setting:
+    trustCA = true;
 
     # Declarative enrollment. The two tenant secrets — the org key (Windows `token=`)
     # and the secure-enrollment auth token (Windows `enrollauthtoken=`) — stay OUT of
