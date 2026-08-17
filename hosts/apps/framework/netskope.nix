@@ -84,17 +84,22 @@
     # change, 90s of live steering with DNS and TCP up throughout, versus dead within
     # 27s before it.
     #
-    # This stays false anyway until the whole combination has been through one live
-    # session on this host, because the failure mode is a laptop that needs a reboot.
-    # Bring it up deliberately, with the harness that has its own backout:
+    # On, as of a supervised run on this host that held up: tunnel established to
+    # US-ORD2, "Enable NS packet filter for web mode" on ports 80/443, packet steering
+    # started, and DNS, TCP and plain HTTPS all up throughout with no dead rounds.
     #
-    #   ~/Documents/netskope-client/tools/steering-test.sh
-    #   systemctl start stagentd     # or by hand, and `stop` when it misbehaves
+    # If it ever misbehaves again, note that stopping this daemon is not as simple as
+    # it looks. `systemctl stop` alone does not do it -- its shutdown path does network
+    # work that hangs precisely when the network is down, and it sat there for 30s
+    # still holding its routing. `kill -s KILL` alone does not either, because the unit
+    # is Restart=always and systemd brings it straight back. It is:
     #
-    # Note the harness needs a live sudo/polkit session: stopping this daemon reliably
-    # means `systemctl stop --no-block` then `kill -s KILL`, and undoing its routing by
-    # hand, since a killed client cleans up nothing.
-    autoStart = false;
+    #   systemctl stop --no-block stagentd && systemctl kill -s KILL stagentd
+    #
+    # and then undoing the routing by hand, since a killed client cleans up nothing:
+    # `ip rule del fwmark 0x5 table 9`, `ip route flush table 9`, `ip link del sta0`.
+    # ~/Documents/netskope-client/tools/steering-test.sh does all of that on a timer.
+    autoStart = true;
 
     # SSL-inspection CA. Netskope MITMs TLS, so once steering is live anything that
     # doesn't trust this CA gets certificate errors — verified here: under steering
