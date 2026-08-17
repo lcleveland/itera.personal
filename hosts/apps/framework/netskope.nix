@@ -64,6 +64,25 @@
     # the StatusNotifier host it registers against.
     enableTray = true;
 
+    # Do NOT start the daemon at boot. Steering works as of upstream #18, and that is
+    # exactly the problem: the moment the client's tunnel connects it takes over all
+    # web traffic, and on this host that killed connectivity outright — name
+    # resolution failing, sockets timing out, and eventually the client's own control
+    # traffic timing out and the tunnel dropping. Recovering meant rebooting into an
+    # older generation, because the tenant sets allowClientDisabling=false so
+    # `stAgentCli disable` is refused, and the daemon reinstates its rules on restart.
+    #
+    # With this false the client is installed, enrolled and dormant. Bring it up
+    # deliberately, when there is time to watch it:
+    #
+    #   systemctl start stagentd     # and `stop` the moment the network misbehaves
+    #
+    # Flip back to true once steering is understood — see the Steering section of the
+    # upstream README for the open leads (tunnel MTU taken raw from the physical
+    # interface, netlink route lookups failing during setup, DNS being steered on a
+    # systemd-resolved host).
+    autoStart = false;
+
     # SSL-inspection root CA. Netskope MITMs TLS, so once steering is live anything
     # that doesn't trust this CA sees certificate errors. Deliberately OFF until the
     # tenant CA PEM is on disk — the installer does not ship it, so it can't be
