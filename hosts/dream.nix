@@ -113,8 +113,6 @@ in
     gaming.enable = true;
 
     # Local AI (opt-in): ollama runtime + open-webui chat UI.
-    # The ollama package itself is pinned ahead of the channel — see the
-    # `nixpkgs.overlays` block at the bottom of this file.
     ai.ollama.enable = true;
     ai.openWebui.enable = true;
     # acceleration defaults to "auto" -> CUDA build when itera.nvidia is on, else
@@ -150,43 +148,5 @@ in
   # what it patches and the maintenance expectations on a kernel bump.
   boot.extraModulePackages = [
     (pkgs.callPackage ./mt7927-mt76.nix { inherit (config.boot.kernelPackages) kernel; })
-  ];
-
-  # TEMPORARY: pull ollama ahead of the nixos-unstable channel.
-  #
-  # Upstream is on 0.32.13 (2026-08-14); the channel we track still carries
-  # 0.32.7 because the bump has only landed on nixpkgs `master` and has not
-  # cleared Hydra yet. This takes just the package *expression* from that master
-  # commit and evaluates it against our own pkgs, so the pin costs one ollama
-  # rebuild rather than dragging a second nixpkgs closure onto the machine
-  # (nothing else here comes from master). The 0.32.7 → 0.32.13 delta in
-  # nixpkgs is only the version, the two source hashes and the vendored
-  # llama.cpp pin — every dependency argument the expression takes already
-  # exists in our nixpkgs.
-  #
-  # DELETE THIS once `nix flake update` brings the channel to 0.32.13 or newer;
-  # `nix eval nixpkgs#ollama.version` against the updated lock tells you when.
-  # If it is still here after that, it is silently holding ollama BACK.
-  nixpkgs.overlays = [
-    (final: _prev:
-      let
-        # nixpkgs master @ "ollama-cpu: 0.32.11 -> 0.32.13".
-        nixpkgsMaster = final.fetchFromGitHub {
-          owner = "NixOS";
-          repo = "nixpkgs";
-          rev = "4055e99dd4df572a1b90ca2aa843c209aaf281c5";
-          hash = "sha256-wyFUywypSg+QM2U0iEOZ26P5GfOqQ738xTjd9807RX0=";
-        };
-        ollamaPackage = "${nixpkgsMaster}/pkgs/by-name/ol/ollama/package.nix";
-      in
-      # All four variants, so itera's `ai.ollama.acceleration` picks a pinned
-      # build whichever way it resolves.
-      {
-        ollama = final.callPackage ollamaPackage { };
-        ollama-cuda = final.callPackage ollamaPackage { acceleration = "cuda"; };
-        ollama-rocm = final.callPackage ollamaPackage { acceleration = "rocm"; };
-        ollama-vulkan = final.callPackage ollamaPackage { acceleration = "vulkan"; };
-      }
-    )
   ];
 }
