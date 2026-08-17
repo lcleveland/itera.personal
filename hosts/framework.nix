@@ -8,6 +8,8 @@
     itera.hardwareModules.framework-16-7040-amd
     # Framework-only apps, migrated from the old eiros.users.work repo.
     ./apps/framework/smartcard-reader.nix
+    # Corporate Netskope client (work tenant only, hence not in common.nix).
+    ./apps/framework/netskope.nix
   ];
 
   itera = {

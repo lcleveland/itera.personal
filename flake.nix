@@ -24,10 +24,20 @@
       url = "github:lcleveland/ninjarmm-ncplayer";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Netskope Client for Linux (the corporate SASE/SSE endpoint agent).
+    # A flake exposing nixosModules.default (option: services.netskope.*) plus the
+    # unfree, tenant-specific NSClient.run packaging. Unlike ninjarmm-ncplayer this
+    # is NOT imported for every host — the tenant is work-only, so the module is
+    # imported by hosts/apps/framework/netskope.nix via specialArgs. Share nixpkgs.
+    netskope = {
+      url = "github:lcleveland/netskope-client";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, netskope, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -38,8 +48,10 @@
           system = "x86_64-linux";
           # Expose the itera flake to host modules so they can select a
           # nixos-hardware board via `itera.hardwareModules.<board>` (an
-          # import-time choice, not a `config.itera.*` option).
-          specialArgs = { inherit itera; };
+          # import-time choice, not a `config.itera.*` option). `netskope` rides
+          # along for the same reason: it is a host-scoped module import (framework
+          # only), which `imports` can't gate on config.
+          specialArgs = { inherit itera netskope; };
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default

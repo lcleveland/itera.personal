@@ -461,6 +461,26 @@
         "type": "github"
       }
     },
+    "netskope": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786975029,
+        "narHash": "sha256-8wl//mAI8ksUohRmAdtkiZQO4u0lqJ1KGF3n6I+MX9I=",
+        "owner": "lcleveland",
+        "repo": "netskope-client",
+        "rev": "f8cc51e586548b3e70807839ea9c3679e8217227",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lcleveland",
+        "repo": "netskope-client",
+        "type": "github"
+      }
+    },
     "ninjarmm-ncplayer": {
       "inputs": {
         "nixpkgs": [
@@ -653,6 +673,7 @@
       "inputs": {
         "hjem": "hjem",
         "itera": "itera",
+        "netskope": "netskope",
         "ninjarmm-ncplayer": "ninjarmm-ncplayer",
         "nixpkgs": "nixpkgs"
       }
