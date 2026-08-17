@@ -4,11 +4,15 @@
 # than hosts/common.nix, and the flake module comes in through specialArgs
 # (see flake.nix) instead of the every-host `modules` list.
 #
-# The module + packaging live in github:lcleveland/netskope-client. Upstream flags
-# it as NOT yet run-verified on a real Nix host, and the enrollment handshake in
-# particular is untested — see the enrollment block below before trusting it.
+# The module + packaging live in github:lcleveland/netskope-client. Upstream has now
+# host-verified the parts that don't need tenant credentials — the package builds,
+# every binary's libraries resolve, and stagentd + the tray user service start — and
+# its VM test passes. Still unverified there: the enrollment handshake (needs the
+# tenant org key + auth token, see below), and the bind-mount peer-path fix, which
+# has only been exercised in the VM test against a stub package.
 {
   netskope,
+  config,
   pkgs,
   ...
 }:
@@ -68,7 +72,8 @@
     # aren't in this repo — the org key (Windows `token=`) and the secure-enrollment
     # auth token (Windows `enrollauthtoken=`), both from the admin console. Without
     # them the client is installed and the daemon runs, but the device never enrolls
-    # — no .eetk token is written, and the tray/stAgentCli report it unenrolled.
+    # — no tenant branding file is downloaded, and the tray/stAgentCli report it
+    # unenrolled.
     #
     # To turn it on, drop the two values into root-only files that survive the
     # ephemeral root — /persist is the pragmatic spot (agenix is available through
@@ -88,15 +93,25 @@
     # These are `str`, not `path`, precisely so the secrets are read at runtime via
     # systemd LoadCredential and never enter the store. Don't enable this before the
     # files exist: netskope-enroll.service would fail on every boot (the daemon still
-    # starts, since it only `wants` the enroll unit).
+    # starts, since it only `wants` the enroll unit). Once the files are in place the
+    # unit is self-verifying — it now checks that a branding file actually landed and
+    # fails loudly instead of "succeeding" with the client still unenrolled.
   };
 
   # The package installs everything under $out/opt/netskope/stagent and ships no
   # $out/bin, so the module's `environment.systemPackages = [ cfg.package ]` puts no
-  # commands on PATH — leaving no way to ask the client what it's doing. Expose the
-  # two user-facing tools. They point at the materialised /opt path on purpose (not
-  # the store): the client resolves its state relative to its own location, so a CLI
-  # invoked from the store would look for config in a read-only directory.
+  # commands on PATH — leaving no way to ask the client what it's doing.
+  #
+  # These symlinks MUST point at /opt/netskope/stagent rather than into the store.
+  # The client's IPC layer (NSCom2) authenticates peers by resolving the connecting
+  # process's /proc/<pid>/exe against a hard-coded allowlist of
+  # /opt/netskope/stagent/{stAgentApp,stAgentCli,stAgentUI,nsdiag,bwansvc} — the
+  # constraint that forced upstream to bind-mount the app dir instead of symlinking
+  # binaries in from the store. Verified: exec'ing through this symlink chain
+  # (/run/current-system/sw/bin -> store -> /opt) makes /proc/<pid>/exe read back as
+  # /opt/netskope/stagent/stAgentCli, so the peer check passes; a store-resident copy
+  # would report a /nix/store/... path and be rejected with "NSCOM2 invalid client
+  # connection".
   environment.systemPackages = [
     (pkgs.runCommandLocal "netskope-cli" { } ''
       mkdir -p $out/bin
@@ -105,22 +120,38 @@
     '')
   ];
 
-  # Impermanence: the root is tmpfs, so without this every reboot looks like a fresh
-  # install to Netskope. The module redirects the client's hard-coded writable state
-  # (/opt/netskope/stagent/{data,logs}, which upstream expects to be mutable) to
-  # /var/lib/netskope, and itera's curated persist list does not cover it. data/
-  # holds the provisioned certs, the client config, and the .eetk enrollment token,
-  # so persisting this directory is what makes enrollment survive the wiped root.
-  # Mode 0700 to match what netskope-setup.service creates for data/ (secrets).
+  # Impermanence. The client hard-codes /opt/netskope/stagent and writes its state
+  # there, so upstream keeps the real directory at `statePath`/app and bind-mounts it
+  # onto that path (a bind, not a symlink, so /proc/<pid>/exe keeps the hard-coded
+  # path the IPC peer check demands — see the CLI note above). That makes statePath
+  # the single thing an impermanent host has to persist: it holds the device identity
+  # (.mid, provisioning), the config, the enrollment result, and data/ + logs/.
+  # itera's curated persist list doesn't cover it, so declare it here — otherwise
+  # every reboot looks like a fresh install to Netskope.
   #
-  # /opt/netskope/stagent itself is intentionally NOT persisted: netskope-setup
-  # re-materialises it from the store on every boot and switch, which is what keeps
-  # it in sync across nixpkgs bumps. If enrollment turns out to re-run on every boot,
-  # the cause is the client writing .eetk into that top directory instead of data/
-  # (the enroll unit checks both paths) — persist "/opt/netskope/stagent" then.
+  # This entry is ALSO load-bearing for the daemon starting at all, which is easy to
+  # miss. itera bind-mounts /var with noexec, and since the rework the app dir holds
+  # REAL ELF binaries (previously they were symlinks into /nix/store, which execs
+  # from the store's own mount). Verified on the live host: a binary in a plain
+  # directory under the noexec /var fails to exec (126), while a bind mount whose
+  # source is the exec-capable /persist subvolume runs fine — mount flags are
+  # per-mount and are NOT inherited from the parent mount — and netskope-setup's
+  # second bind (app -> /opt) preserves that. Drop this entry and stagentd dies on
+  # exec, not merely on lost state.
+  #
+  # Ordering is handled upstream: netskope-setup carries
+  # RequiresMountsFor=/var/lib/netskope, so it waits for the bind mount below.
+  #
+  # Nothing under /opt is persisted, and it must stay that way — those files are
+  # refreshed from the store whenever the package changes, and a persisted /opt would
+  # shadow the bind mount. Mode 0700 on statePath is deliberate and safe: nothing
+  # reaches the state through this path. The per-user stAgentUI/stAgentCli read
+  # data/nsusercert.p12 via /opt/netskope/stagent/data, so they never traverse
+  # statePath itself, and netskope-setup sets app/, data/ and logs/ to 0755 inside.
   itera.impermanence.directories = [
     {
-      directory = "/var/lib/netskope";
+      # Tracks the module's own option so the two can't drift apart.
+      directory = config.services.netskope.statePath;
       mode = "0700";
     }
   ];
