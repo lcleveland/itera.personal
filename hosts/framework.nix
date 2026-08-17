@@ -1,5 +1,5 @@
 # framework — Framework 16 work laptop (eiros hostname LS-04380).
-{ itera, ... }:
+{ itera, lib, ... }:
 {
   # Framework 16 (AMD Ryzen 7040) hardware quirks, re-exported by itera from
   # nixos-hardware. Board selection is an import-time choice the module system
@@ -11,6 +11,25 @@
     # Corporate Netskope client (work tenant only, hence not in common.nix).
     ./apps/framework/netskope.nix
   ];
+
+  # Panel goes DIM at 97-100% brightness (correct below that). Since 6.14 amdgpu
+  # applies a "custom brightness curve" derived from the panel's EDID luminance
+  # data, and it is broken at the top of the range on BOE panels behind an AMD
+  # iGPU — which is what the Framework 16 ships. scale_input_to_fw() omits the
+  # `- min` term its own comment implies, so full brightness scales to 268 and
+  # overshoots AMDGPU_MAX_BL_LEVEL (0xFF); the scale_fw_to_input() round-trip
+  # then exceeds 65535 and wraps backlight_pwm_u16_16 to a near-minimum duty.
+  #
+  # 0x40000 = DC_DISABLE_CUSTOM_BRIGHTNESS_CURVE, OR'd with the 0x10
+  # (DC_DISABLE_PSR) that nixos-hardware's framework/16-inch/common/amd.nix
+  # already sets. Add 0x400 (DC_DISABLE_REPLAY) -> 0x40410 if flicker appears.
+  #
+  # mkAfter, not mkForce: nixos-hardware sets its 0x10 as a plain list element
+  # rather than mkDefault, and kernelParams is a list that concatenates, so
+  # priority cannot override it. Both land on the cmdline and the LAST
+  # assignment wins for module params — mkAfter is what guarantees ours is last.
+  # Verify after rebooting: /sys/module/amdgpu/parameters/dcdebugmask == 262160.
+  boot.kernelParams = lib.mkAfter [ "amdgpu.dcdebugmask=0x40010" ];
 
   itera = {
     networking.hostName = "LS-04380";
