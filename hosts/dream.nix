@@ -1,6 +1,5 @@
 # dream — AMD desktop (eiros hostname DREAM).
 {
-  config,
   pkgs,
   ...
 }:
@@ -9,7 +8,7 @@ let
   # functions: WiFi as PCIe (14c3:7927 at 0000:09:00.0) and Bluetooth as USB,
   # and the USB half is what sits on usb1-port8.
   #
-  # Kernel 7.1.8 already has full in-tree Bluetooth support for it — btmtk.ko
+  # Kernel 7.2 already has full in-tree Bluetooth support for it — btmtk.ko
   # references `mediatek/mt7927/BT_RAM_CODE_MT6639_2_1_hdr.bin`, MT6639 and
   # mt7927 by name, and btusb matches MediaTek's 0489 vendor class. The ONLY
   # missing piece is the firmware blob itself: linux-firmware ships the two
@@ -142,11 +141,9 @@ in
   # failure.
   hardware.firmware = [ mt7927BtFirmware ];
 
-  # Wi-Fi half of the same MT7927 module. Nothing in kernel 7.1.8 claims
-  # 14c3:7927, so the onboard radio never binds a driver and there is no wlan
-  # interface; this out-of-tree mt76 rebuild adds it. See the file header for
-  # what it patches and the maintenance expectations on a kernel bump.
-  boot.extraModulePackages = [
-    (pkgs.callPackage ./mt7927-mt76.nix { inherit (config.boot.kernelPackages) kernel; })
-  ];
+  # The Wi-Fi half of the same MT7927 module needs nothing here. Kernel 7.2
+  # claims 14c3:7927 (and 14c3:6639 / 14c3:0738) in-tree: mt7925e carries the
+  # MT7927 chip IDs, firmware paths, its DMA ring layout and IRQ map, the ASPM
+  # workaround and 320 MHz EHT. The out-of-tree mt76 rebuild that supplied all
+  # of that on 7.1.8 (hosts/mt7927-mt76.nix) is gone as of the 7.2 bump.
 }
