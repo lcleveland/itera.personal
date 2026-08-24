@@ -43,16 +43,16 @@
 
     # Hash of the fetched NSClient.run. NOT universal — Netskope rebuilds the
     # installer per tenant and version, so this pins the exact build we packaged
-    # (v140.0.2.2763). It changes whenever the tenant is moved to a new client
+    # (v140.1.0.2781). It changes whenever the tenant is moved to a new client
     # release, and the fetch then fails with a hash mismatch. Re-pin with:
     #
     #   nix store prefetch-file --name NSClient.run \
     #     "https://download-lselectric.goskope.com/dlr/linux/get"
     #
-    # (Verified current as of 2026-08-17.) The client cannot self-update on NixOS
+    # (Verified current as of 2026-08-24.) The client cannot self-update on NixOS
     # (immutable store), so bumping this hash IS the update path — which is why
     # `autoUpdate` is left at its default of false.
-    hash = "sha256-lOAsV+/zV1KNZBraDw8qa7nL4SDu0GH3who7fgLhQTI=";
+    hash = "sha256-NsTHUuSfsKRT9mdSL7M42MrR9ldc1fKPI/WJgHcjtAA=";
 
     # Tray UI — two per-user services, both wired to graphical-session.target:
     # stagentapp (the watchdog / session IPC broker) and stagentui (the GTK tray icon
