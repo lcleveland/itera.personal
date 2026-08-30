@@ -49,7 +49,7 @@
     #   nix store prefetch-file --name NSClient.run \
     #     "https://download-lselectric.goskope.com/dlr/linux/get"
     #
-    # (Verified current as of 2026-08-24.) The client cannot self-update on NixOS
+    # (Verified current as of 2026-08-29.) The client cannot self-update on NixOS
     # (immutable store), so bumping this hash IS the update path — which is why
     # `autoUpdate` is left at its default of false.
     hash = "sha256-NsTHUuSfsKRT9mdSL7M42MrR9ldc1fKPI/WJgHcjtAA=";
