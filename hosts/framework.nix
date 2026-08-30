@@ -122,6 +122,24 @@
         y = 1080; # below DP-10
       };
     };
+
+    # Pointer input. Neither knob is a curated itera option, so they go through
+    # the per-user `extraConfig` escape hatch, which the hjem renderer appends
+    # verbatim to ~/.config/mango/config.conf (last section in the file).
+    #
+    #   *_natural_scrolling  mango defaults BOTH to 0 (content moves opposite the
+    #                        fingers/wheel). 1 = natural/"content follows the
+    #                        gesture", the macOS-style direction. Set on the
+    #                        trackpad AND the external mouse so the direction is
+    #                        the same whichever pointer is in hand.
+    #   sloppyfocus          mango defaults it to 1 — focus follows the cursor, so
+    #                        merely passing the pointer over a window steals focus
+    #                        from what you were typing in. 0 = click to focus.
+    users.lcleveland.programs.mango.extraConfig = ''
+      trackpad_natural_scrolling=1
+      mouse_natural_scrolling=1
+      sloppyfocus=0
+    '';
     # nvidia stays OFF (itera.nvidia is opt-in / default false) — matches eiros.
   };
   # SKIPPED (per user): MT7922 Bluetooth softdep/autosuspend quirks; 3-finger
