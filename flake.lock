@@ -280,26 +280,6 @@
         "type": "github"
       }
     },
-    "freetoken": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1788726107,
-        "narHash": "sha256-rQxT7WspGz03OgD2IvUrEl8aslCy+bJgonXgasUE8ew=",
-        "owner": "lcleveland",
-        "repo": "freetoken",
-        "rev": "cc397c63fecc9994a5983a93e22a709124f0ad93",
-        "type": "github"
-      },
-      "original": {
-        "owner": "lcleveland",
-        "repo": "freetoken",
-        "type": "github"
-      }
-    },
     "git-hooks": {
       "inputs": {
         "flake-compat": "flake-compat_2",
@@ -709,7 +689,6 @@
     },
     "root": {
       "inputs": {
-        "freetoken": "freetoken",
         "hjem": "hjem",
         "itera": "itera",
         "netskope": "netskope",
