@@ -41,6 +41,7 @@ in
   imports = [
     ./apps/dream/awakened-poe-trade.nix
     ./apps/dream/exiled-exchange-2.nix
+    ./apps/dream/freetoken.nix
     ./apps/dream/stability-matrix.nix
     ./apps/dream/orca-slicer.nix
     ./apps/dream/pob.nix
