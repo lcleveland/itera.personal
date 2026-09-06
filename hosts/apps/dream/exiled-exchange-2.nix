@@ -2,12 +2,12 @@
 # upstream AppImage and wrapped to disable the GPU and the in-game overlay.
 { pkgs, lib, ... }:
 let
-  version = "0.15.8";
+  version = "0.16.2";
   pname = "exiled-exchange-2";
 
   src = pkgs.fetchurl {
     url = "https://github.com/Kvan7/Exiled-Exchange-2/releases/download/v${version}/Exiled-Exchange-2-${version}.AppImage";
-    hash = "sha256-xmEvKJkRFJokzOa/6qRqT4+QKfnfjIoAfqP+oDqyxH8=";
+    hash = "sha256-jMOV+W8ffsnL5/U1PNBoc8J9NbERDqP6eLSOhhk1bWg=";
   };
 
   appimageContents = pkgs.appimageTools.extract { inherit pname version src; };
