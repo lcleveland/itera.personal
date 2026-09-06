@@ -34,10 +34,27 @@
       url = "github:lcleveland/netskope-client";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # FreeToken — FlashML's edge-native MoE serving engine (the `ft` CLI) and its
+    # desktop GUI, packaged for NixOS. A flake exposing nixosModules.default
+    # (options: services.freetoken.* and programs.freetoken-desktop.*). CUDA-only,
+    # so like netskope this is NOT imported for every host: it is dream-only (the
+    # NVIDIA box) and comes in via specialArgs, through
+    # hosts/apps/dream/freetoken.nix.
+    #
+    # Following our nixpkgs is free here, not just tidy: the CUDA torch this
+    # resolves to is the same derivation under our rev and the one this flake
+    # pins, so sharing nixpkgs costs no extra build. It still builds its own
+    # package set with `cudaSupport = true`; nothing else on the system is
+    # rebuilt with CUDA because of it.
+    freetoken = {
+      url = "github:lcleveland/freetoken";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, netskope, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, netskope, freetoken, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -50,8 +67,10 @@
           # nixos-hardware board via `itera.hardwareModules.<board>` (an
           # import-time choice, not a `config.itera.*` option). `netskope` rides
           # along for the same reason: it is a host-scoped module import (framework
-          # only), which `imports` can't gate on config.
-          specialArgs = { inherit itera netskope; };
+          # only), which `imports` can't gate on config — as does `freetoken`,
+          # which is dream-only for the mirror-image reason (it needs the NVIDIA
+          # GPU that only dream has).
+          specialArgs = { inherit itera netskope freetoken; };
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default
