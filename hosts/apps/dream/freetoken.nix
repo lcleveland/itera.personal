@@ -13,11 +13,65 @@
 # from source against nixpkgs' torch/CUDA and wrapped with the CUDA toolchain it
 # JITs kernels with, plus the repackaged (closed-source, unfree) desktop .deb
 # with a real launcher entry.
+#
+# What this file does NOT use is that flake's own `packages.x86_64-linux.*`,
+# which resolve against a source-built torch. See `ftPkgs` below.
 {
   freetoken,
   config,
+  pkgs,
   ...
 }:
+let
+  # A private nixpkgs for FreeToken alone. Two deviations from the flake's own
+  # package set, and nothing outside this `let` sees either of them:
+  #
+  #   1. torch comes from `torch-bin`, PyTorch's own prebuilt cu130 wheel (a
+  #      526 MB fixed-output download), instead of being compiled. Building
+  #      nixpkgs' torch with `cudaSupport` is the single biggest cost in this
+  #      closure and it is cached nowhere — not cache.nixos.org, not
+  #      nix-community, not cuda-maintainers, in any nixos-unstable rev sampled
+  #      back to 2026-01. This is the only way to avoid that compile.
+  #
+  #   2. cudaPackages is pinned to 13.x. Not a preference: torch 2.13's wheels
+  #      want cuda-bindings >= 13.0.3, so against the default 12.9 nixpkgs marks
+  #      torch-bin broken outright ("cudaPackages is too old"). The cost is real
+  #      — nix-community caches the 12.9 closure and not the 13.2 one, so the
+  #      cuda_* redistributables get unpacked locally instead of substituted.
+  #      They are unpack-and-patchelf jobs, not compiles.
+  #
+  # The three passthru attributes below are the seam between the two. The source
+  # torch carries them and the wheel does not, and each one is a hard eval
+  # failure rather than a fallback: `cudaSupport` and `cudaCapabilities` are read
+  # by nixpkgs' flashinfer-python (`meta.broken` and FLASHINFER_CUDA_ARCH_LIST),
+  # `cudaPackages` by freetoken's own default for its build toolkit.
+  #
+  # Everything else still compiles: flashinfer-python, triton, numba,
+  # nvidia-cutlass-dsl, freetoken and flashlib — flashinfer against the wheel's
+  # bundled libtorch rather than nixpkgs' own.
+  ftPkgs = import pkgs.path {
+    inherit (pkgs.stdenv.hostPlatform) system;
+    config = {
+      allowUnfree = true;
+      cudaSupport = true;
+    };
+    overlays = [
+      freetoken.overlays.default
+      (final: prev: {
+        cudaPackages = final.cudaPackages_13;
+        pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+          (_pyFinal: pyPrev: {
+            torch = pyPrev.torch-bin // {
+              cudaSupport = true;
+              inherit (final) cudaPackages;
+              inherit (final.cudaPackages.flags) cudaCapabilities;
+            };
+          })
+        ];
+      })
+    ];
+  };
+in
 {
   # nixosModules.default, NOT nixosModules.desktop, even though only the GUI is
   # wanted here. The GUI-alone module reads `config.services.freetoken.package`
@@ -28,7 +82,19 @@
   # stays off (see below), so nothing extra is built or run.
   imports = [ freetoken.nixosModules.default ];
 
-  programs.freetoken-desktop.enable = true;
+  # `package` and `engine` both come from `ftPkgs`, overriding the flake module's
+  # mkDefault (which points at the flake's own source-torch build). The overlay
+  # already wires `ftPkgs.freetoken-desktop` to `ftPkgs.freetoken`; setting
+  # `engine` too is what the desktop module reads for FREETOKEN_FT_BIN.
+  programs.freetoken-desktop = {
+    enable = true;
+    package = ftPkgs.freetoken-desktop;
+    engine = ftPkgs.freetoken;
+  };
+
+  # Kept in lockstep even though the service is off, so enabling it later cannot
+  # silently pull in a second, source-built torch.
+  services.freetoken.package = ftPkgs.freetoken;
 
   # services.freetoken is deliberately NOT enabled. The GUI starts and stops its
   # own `ft serve` on port 1919, so running the systemd service too means two
@@ -68,26 +134,15 @@
   # never run: the module wires FREETOKEN_FT_BIN to the Nix `ft`.)
   itera.impermanence.users.lcleveland.directories = [ ".freetoken" ];
 
-  # No extra binary cache here, deliberately. Measured when this was added
-  # (2026-09-06), for this nixpkgs rev:
-  #   - nix-community.cachix.org — which itera already configures by default —
-  #     serves the whole CUDA 12.9 dependency closure (cudnn, the cuda_*
-  #     redistributables, ~5.4 GiB). Nothing to add.
-  #   - cuda-maintainers.cachix.org, the cache upstream's README recommends, has
-  #     nothing for this rev. It only carries the revs its own CI builds, never
-  #     channel snapshots, so a rebuild would just pay an extra round trip per
-  #     query for a cache that never hits.
-  #   - `python3Packages.torch` itself is on NO public cache, in any of the six
-  #     nixos-unstable revs sampled back to January. It is built from source, and
-  #     it is the bulk of the first rebuild: 23 derivations, of which torch,
-  #     flashinfer-python and triton are the expensive ones.
-  #
-  # If that ever needs to go away, the escape hatch is `python3Packages.torch-bin`
-  # (PyTorch's own prebuilt cu130 wheel — no compile at all), but it needs
-  # `cudaPackages = cudaPackages_13`, three passthru attributes the source build
-  # has and the wheel does not (`cudaSupport`, `cudaPackages`, `cudaCapabilities`,
-  # all read by flashinfer-python and freetoken), and it trades the cached 12.9
-  # closure for an uncached 13.2 one.
+  # No extra binary cache here, deliberately. Measured 2026-09-06 for this rev:
+  # nix-community.cachix.org (which itera configures by default) serves the CUDA
+  # 12.9 dependency closure, and cuda-maintainers.cachix.org — the cache
+  # upstream's README recommends — has nothing at all for this rev, in any of six
+  # nixos-unstable revs sampled back to January. It only carries the revs its own
+  # CI builds, never channel snapshots, so adding it would buy nothing but a
+  # round trip per query. With `ftPkgs` on cudaPackages 13.x this host is off the
+  # 12.9 closure nix-community does have, so the CUDA redistributables are
+  # unpacked locally either way.
 
   # If the window comes up blank on the proprietary NVIDIA driver, this is the
   # override upstream asks for on the WebKitGTK nixpkgs ships (the app rejects
