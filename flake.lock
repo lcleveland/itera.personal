@@ -287,11 +287,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788737518,
-        "narHash": "sha256-W8ykpeizKJky08BEIqYOjg4SwqPht1rUkZbtag0DqWU=",
+        "lastModified": 1788740368,
+        "narHash": "sha256-9etu5imYapr1yn63L1MBppgfG4XULpoJmWCZD6VY9to=",
         "owner": "lcleveland",
         "repo": "freetoken",
-        "rev": "662734e51476c4000768e73ddb5fae4fb358ad14",
+        "rev": "5a257ee63097d66b928fcf6cf8969214651b3801",
         "type": "github"
       },
       "original": {
