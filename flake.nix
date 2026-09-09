@@ -43,13 +43,19 @@
     # hosts/apps/framework/falcon-sensor.nix. Share nixpkgs.
     #
     # The installer sits behind an authenticated CrowdStrike API and can never be
-    # fetched during a build, so the package is a `requireFile`: the flake's
-    # pkgs/sources.json pins name + SHA-256, and the blob has to be added to the
-    # store once per machine (`nix run github:lcleveland/falcon-sensor#update-sensor`,
-    # or `nix-store --add-fixed sha256 <deb>` for a hand-downloaded one). Until it
-    # is, evaluation still succeeds and only the BUILD fails, with requireFile's
-    # message saying exactly what to run. Bumping the pin upstream is therefore
-    # the update path — nothing here can self-update.
+    # fetched during a build, so the sensor is NOT packaged: this host downloads
+    # its own copy at runtime, authenticating with an API client id + secret kept
+    # in /persist/secrets. Consequences worth knowing at this level:
+    #
+    #   - Nothing here is built from the sensor, so `nixos-rebuild` never needs
+    #     the .deb and never tells you which sensor is deployed. What pins it is
+    #     `services.falcon-sensor.hash` in the host module — the SHA-256 the
+    #     download endpoint is itself keyed by. Bumping that is the upgrade path.
+    #   - The sensor cannot come from a binary cache, and there is no offline
+    #     install.
+    #   - Sensor Download API credentials therefore live on the endpoint. That is
+    #     inherent to this design, not a configuration choice; see the scoping
+    #     note in hosts/apps/framework/falcon-sensor.nix.
     falcon-sensor = {
       url = "github:lcleveland/falcon-sensor";
       inputs.nixpkgs.follows = "nixpkgs";

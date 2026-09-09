@@ -184,11 +184,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788977906,
-        "narHash": "sha256-dv7IYqF7db1ExYBP2efmDC+9QSgzMdy4e/2QhJeag+Q=",
+        "lastModified": 1788982893,
+        "narHash": "sha256-X+CtxOPhizwoWUmr+zIJCOa8fTtGJeTTVv0BXwTdqCQ=",
         "owner": "lcleveland",
         "repo": "falcon-sensor",
-        "rev": "aff2c0a177708e595302f2b2c461b24b37330aba",
+        "rev": "68e868af64d6444ee17fe00daf50cff0811da16c",
         "type": "github"
       },
       "original": {
