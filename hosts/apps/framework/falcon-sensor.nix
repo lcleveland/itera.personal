@@ -17,13 +17,18 @@
 #     writes into its own subdirectories at runtime). That makes statePath the
 #     single thing this impermanent host has to persist — see the bottom of this file.
 #
-# Upstream status, worth knowing before trusting this: the API flow is verified
-# end-to-end against a real tenant (auth with us-1 -> us-2 region autodiscover, CID
-# lookup, installer selection, download, checksum) and the module is covered by a
-# 9-subtest NixOS VM test — but it has NOT been run on real hardware, and the
-# unpack-and-patch half of the fetch tool is covered only by the VM test's stub.
-# Whether the runtime ELF patching upsets the sensor's own integrity checking can
-# only be answered by starting falcond here.
+# VERIFIED ON THIS HOST, 2026-09-09 — this file is no longer the "not yet run on
+# real hardware" case upstream's README describes. Measured on kernel 7.2.3:
+# authenticated to api.us-2.crowdstrike.com, selected and downloaded
+# falcon-sensor_8.10.0-19402_amd64.deb, verified its sha256 against the `hash`
+# below, patched 11 ELF objects for this host, installed into statePath/opt and
+# bind-mounted it onto /opt/CrowdStrike. falcond then started clean with a
+# falcon-sensor-bpf child, and the tenant issued an AID.
+#
+# That answers upstream's headline open question: the runtime ELF patching does NOT
+# upset the sensor's own integrity checking. It also means the whole fetch path —
+# not just the API half the live run covered — is now exercised outside the VM
+# test's stub.
 {
   falcon-sensor,
   config,
@@ -111,11 +116,19 @@
     # which wants a module built against a kernel on CrowdStrike's supported list —
     # which a NixOS kernel generally is not. The module warns if you set "kernel".
     #
-    # EXPECT REDUCED FUNCTIONALITY MODE. The sensor validates the running kernel
-    # against that same supported list and falls back to RFM when it isn't on it, so
-    # this host will most likely report heartbeats and asset inventory but perform no
-    # detection or prevention. No packaging choice avoids that; it is CrowdStrike's
-    # call. Check what actually happened after the first boot with:
+    # RFM: NOT happening here, against every expectation. The sensor validates the
+    # running kernel against that same supported list and falls back to Reduced
+    # Functionality Mode when it isn't on it, and upstream's README says to expect
+    # exactly that on a NixOS kernel. Measured on this host instead:
+    #
+    #   rfm-state=false, rfm-reason=None, code=0x0
+    #
+    # on kernel 7.2.3 with the bpf backend — so the sensor is fully operational, doing
+    # real detection and prevention rather than only heartbeats and inventory. Do not
+    # treat that as guaranteed across kernel bumps: this is CrowdStrike's supported-
+    # kernel list, it moves without reference to us, and a NixOS kernel update is
+    # exactly the kind of change that can silently drop the host into RFM. Re-check
+    # after kernel upgrades with:
     #
     #   sudo /opt/CrowdStrike/falconctl -g --rfm-state --rfm-reason --version --aid
     #   sudo /opt/CrowdStrike/falcon-kernel-check
