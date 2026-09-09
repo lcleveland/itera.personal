@@ -35,6 +35,26 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # CrowdStrike Falcon sensor — the corporate EDR agent. A flake exposing
+    # nixosModules.default (option: services.falcon-sensor.*) plus the unfree,
+    # non-redistributable .deb packaging. Framework-only for the same reason as
+    # netskope (it is the work tenant's agent), so it comes in through
+    # specialArgs rather than the every-host `modules` list, and is imported by
+    # hosts/apps/framework/falcon-sensor.nix. Share nixpkgs.
+    #
+    # The installer sits behind an authenticated CrowdStrike API and can never be
+    # fetched during a build, so the package is a `requireFile`: the flake's
+    # pkgs/sources.json pins name + SHA-256, and the blob has to be added to the
+    # store once per machine (`nix run github:lcleveland/falcon-sensor#update-sensor`,
+    # or `nix-store --add-fixed sha256 <deb>` for a hand-downloaded one). Until it
+    # is, evaluation still succeeds and only the BUILD fails, with requireFile's
+    # message saying exactly what to run. Bumping the pin upstream is therefore
+    # the update path — nothing here can self-update.
+    falcon-sensor = {
+      url = "github:lcleveland/falcon-sensor";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # FreeToken — FlashML's edge-native MoE serving engine (the `ft` CLI) and its
     # desktop GUI, packaged for NixOS. A flake exposing nixosModules.default
     # (services.freetoken.* + programs.freetoken-desktop.*) and
@@ -65,7 +85,7 @@
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, netskope, freetoken, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, netskope, falcon-sensor, freetoken, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -78,10 +98,10 @@
           # nixos-hardware board via `itera.hardwareModules.<board>` (an
           # import-time choice, not a `config.itera.*` option). `netskope` rides
           # along for the same reason: it is a host-scoped module import (framework
-          # only), which `imports` can't gate on config — as does `freetoken`,
-          # which is dream-only for the mirror-image reason (it needs the NVIDIA
-          # GPU that only dream has).
-          specialArgs = { inherit itera netskope freetoken; };
+          # only), which `imports` can't gate on config — as does `falcon-sensor`,
+          # the other work-tenant agent, and `freetoken`, which is dream-only for
+          # the mirror-image reason (it needs the NVIDIA GPU that only dream has).
+          specialArgs = { inherit itera netskope falcon-sensor freetoken; };
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default
