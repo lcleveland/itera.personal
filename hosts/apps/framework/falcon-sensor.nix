@@ -147,6 +147,41 @@
     # which is right for golden images and exactly wrong for a persisted laptop: it
     # would defeat the state directory below and re-register this machine as a new
     # device each boot. The module warns if you enable it.
+
+    # Tray icon. Off by default upstream, whose usual host is headless — this one
+    # has a session and a bar, and a security agent you cannot see is one you stop
+    # noticing has stopped. Same reasoning as netskope's `enableTray`, and it
+    # registers against the same StatusNotifierItem host DankMaterialShell
+    # provides. Four states: protected, degraded (RFM, or not yet registered), not
+    # running, and unknown (nothing is publishing).
+    #
+    # Strictly read-only. The menu shows version, unit state and RFM reason;
+    # nothing in it can start, stop or reconfigure the sensor, so this hands the
+    # session no privilege over the EDR.
+    #
+    # It also turns on the status publisher, which is the only reason a tray can
+    # work at all: falconctl is mode 0500, so nothing in a user session can ask the
+    # sensor how it is doing. A root oneshot + timer runs `falconctl -g` and leaves
+    # the answer as world-readable JSON at `status.path`
+    # (/run/falcon-sensor/status.json), refreshed every 60s. `status.enable`
+    # defaults to `tray.enable` and the module asserts tray -> status, so it needs
+    # no line of its own here. That file is derived state under /run, so it is
+    # deliberately not persisted below.
+    #
+    # status.includeIdentifiers stays off (the default): it would put the AID and
+    # the CID into that world-readable file, and this config goes to some length to
+    # keep the CID out of exactly such places — see cidFile above. Registration
+    # state is published either way, derived from whether an AID exists rather than
+    # from its value.
+    #
+    # If the bar ever shows a placeholder instead of a shield, suspect icon-name
+    # resolution rather than the sensor. The tray hands its icons over D-Bus by
+    # absolute path (SNI's IconThemePath) and also installs them into hicolor for
+    # hosts that resolve names through the icon theme instead, while itera points
+    # QS_ICON_THEME at Adwaita; hicolor is the spec's universal fallback, so it
+    # should resolve. `falcon-sensor-tray --print-state` reads the same status file
+    # headlessly, which separates a broken icon from a broken state.
+    tray.enable = true;
   };
 
   # Impermanence. Everything mutable lives under `statePath` (/var/lib/falcon-sensor):
