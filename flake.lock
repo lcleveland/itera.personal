@@ -184,11 +184,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788986695,
-        "narHash": "sha256-EAItE0QMKq9BQTae1gfbko7U4BkxX2aXPMMrbMwBO9o=",
+        "lastModified": 1789052352,
+        "narHash": "sha256-i/8A/pDmONAGWQzqkSdghBb55F4D9ulEhPYkOI5oK+g=",
         "owner": "lcleveland",
         "repo": "falcon-sensor",
-        "rev": "681b13d7c57cb6c0a72e2ed1ce39d198839c6f51",
+        "rev": "b575b5b87ae1e9bf92393f7b05838624020ad568",
         "type": "github"
       },
       "original": {
@@ -456,11 +456,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1788986926,
-        "narHash": "sha256-t3WIEGE3+r0uoCVDXQYr3ODuC5byXDe6MS8mB+bZb1E=",
+        "lastModified": 1789073520,
+        "narHash": "sha256-Za86CrrXSJNkOd7dva6welK/Krzq6o7tlEaI96Sjv7M=",
         "owner": "lcleveland",
         "repo": "itera",
-        "rev": "fd7725654e651cb0844f8328e0a238817fdc40b3",
+        "rev": "940b7be6b31584504949124690d1a42fd85b01d7",
         "type": "github"
       },
       "original": {
@@ -659,11 +659,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1788881743,
-        "narHash": "sha256-2V9GZGvPfrNzxFozhI9dcqV+c3QdA8YZrvAAzqEB+dI=",
+        "lastModified": 1789006805,
+        "narHash": "sha256-xB8mKMOx1IA9vTDNLmJZ6n4wCMq/cuWBBOzGCRnqxrU=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d6524aaca2ff07876657ae2b323f24be4874944b",
+        "rev": "8ce4ef6cb6f871616146b9fe26d2a5ae594e94fe",
         "type": "github"
       },
       "original": {
