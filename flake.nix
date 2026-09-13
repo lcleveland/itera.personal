@@ -29,7 +29,8 @@
     # A flake exposing nixosModules.default (option: services.netskope.*) plus the
     # unfree, tenant-specific NSClient.run packaging. Unlike ninjarmm-ncplayer this
     # is NOT imported for every host — the tenant is work-only, so the module is
-    # imported by hosts/apps/framework/netskope.nix via specialArgs. Share nixpkgs.
+    # imported by hosts/apps/work/netskope.nix (shared by the work laptops
+    # `framework` and `x1yoga`) via specialArgs. Share nixpkgs.
     netskope = {
       url = "github:lcleveland/netskope-client";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -37,10 +38,10 @@
 
     # CrowdStrike Falcon sensor — the corporate EDR agent. A flake exposing
     # nixosModules.default (option: services.falcon-sensor.*) plus the unfree,
-    # non-redistributable .deb packaging. Framework-only for the same reason as
+    # non-redistributable .deb packaging. Work-laptops-only for the same reason as
     # netskope (it is the work tenant's agent), so it comes in through
     # specialArgs rather than the every-host `modules` list, and is imported by
-    # hosts/apps/framework/falcon-sensor.nix. Share nixpkgs.
+    # hosts/apps/work/falcon-sensor.nix. Share nixpkgs.
     #
     # The installer sits behind an authenticated CrowdStrike API and can never be
     # fetched during a build, so the sensor is NOT packaged: this host downloads
@@ -55,7 +56,7 @@
     #     install.
     #   - Sensor Download API credentials therefore live on the endpoint. That is
     #     inherent to this design, not a configuration choice; see the scoping
-    #     note in hosts/apps/framework/falcon-sensor.nix.
+    #     note in hosts/apps/work/falcon-sensor.nix.
     falcon-sensor = {
       url = "github:lcleveland/falcon-sensor";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -103,10 +104,11 @@
           # Expose the itera flake to host modules so they can select a
           # nixos-hardware board via `itera.hardwareModules.<board>` (an
           # import-time choice, not a `config.itera.*` option). `netskope` rides
-          # along for the same reason: it is a host-scoped module import (framework
-          # only), which `imports` can't gate on config — as does `falcon-sensor`,
-          # the other work-tenant agent, and `freetoken`, which is dream-only for
-          # the mirror-image reason (it needs the NVIDIA GPU that only dream has).
+          # along for the same reason: it is a host-scoped module import (the work
+          # laptops only), which `imports` can't gate on config — as does
+          # `falcon-sensor`, the other work-tenant agent, and `freetoken`, which is
+          # dream-only for the mirror-image reason (it needs the NVIDIA GPU that
+          # only dream has).
           specialArgs = { inherit itera netskope falcon-sensor freetoken; };
           modules = [
             itera.nixosModules.default
@@ -121,6 +123,7 @@
       nixosConfigurations = {
         dream = mkHost ./hosts/dream.nix;
         framework = mkHost ./hosts/framework.nix;
+        x1yoga = mkHost ./hosts/x1yoga.nix;
       };
 
       # One installer covering every host in this flake, from itera's upstream
@@ -129,10 +132,11 @@
       # Run it from a live ISO; it picks a host + disk, confirms the wipe, and
       # hands off to disko-install. All FDE behaviour is read from the chosen
       # host's EVALUATED config, so the hands-free path is fully driven by
-      # `itera.disko.encryption.*` in hosts/*.nix: on `framework` it prompts for
-      # the LUKS passphrase, then enrolls the TPM2 keyslot in the same pass so
-      # the first boot is already passwordless — no post-install step, no
-      # duplicated encryption policy in a script here.
+      # `itera.disko.encryption.*` in hosts/*.nix: on the encrypted hosts
+      # (`framework`, `x1yoga`) it prompts for the LUKS passphrase, then enrolls
+      # the TPM2 keyslot in the same pass so the first boot is already
+      # passwordless — no post-install step, no duplicated encryption policy in a
+      # script here.
       #
       #   sudo nix run github:lcleveland/itera.personal#installer            # menus
       #   sudo nix run github:lcleveland/itera.personal#installer -- framework /dev/nvme0n1

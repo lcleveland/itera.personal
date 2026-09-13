@@ -1,8 +1,10 @@
 # Netskope Client for Linux — the corporate SASE/SSE endpoint agent (steers this
-# machine's traffic through the lselectric tenant). Framework-only: the tenant is
-# work infrastructure, so this file is imported from hosts/framework.nix rather
-# than hosts/common.nix, and the flake module comes in through specialArgs
-# (see flake.nix) instead of the every-host `modules` list.
+# machine's traffic through the lselectric tenant). Work-tenant hosts only
+# (framework, x1yoga): the tenant is work infrastructure, so this file is imported
+# from those host files rather than hosts/common.nix, and the flake module comes in
+# through specialArgs (see flake.nix) instead of the every-host `modules` list.
+# Nothing below is laptop-model-specific — it is tenant-specific — which is why
+# this lives under apps/work/ and is shared rather than duplicated per host.
 #
 # The module + packaging live in github:lcleveland/netskope-client. Host-verified
 # there: the package builds, every binary's libraries resolve, stagentd starts, the

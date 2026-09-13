@@ -6,10 +6,15 @@ mango/DankMaterialShell desktop).
 
 ## Hosts
 
-| Flake attr  | Hostname   | Machine                    | Notes                                              |
-|-------------|------------|----------------------------|----------------------------------------------------|
-| `dream`     | `DREAM`    | AMD desktop                | dual monitor, gaming (Steam), local AI (ollama)    |
-| `framework` | `LS-04380` | Framework 16 (7040 AMD)    | fingerprint, printing, Colemak-DH, three monitors  |
+| Flake attr  | Hostname    | Machine                          | Notes                                                    |
+|-------------|-------------|----------------------------------|----------------------------------------------------------|
+| `dream`     | `DREAM`     | AMD desktop                      | dual monitor, gaming (Steam), local AI (ollama)          |
+| `framework` | `LS-04380`  | Framework 16 (7040 AMD)          | work tenant, FDE + TPM2, fingerprint, printing, Colemak-DH, three monitors |
+| `x1yoga`    | `CHANGE-ME` | ThinkPad X1 Yoga Gen 8 (Intel)   | work tenant, FDE + TPM2, fingerprint, printing, Colemak-DH, convertible (auto-rotate) |
+
+The two work laptops share the corporate agents (Netskope, CrowdStrike Falcon,
+OMNIKEY smartcard reader) from [hosts/apps/work/](hosts/apps/work) — those
+modules are work-*tenant* specific, not laptop-model specific.
 
 Both use itera's declarative disk layout (`disko`) with a tmpfs root
 (`impermanence`) — **installing wipes the target disk.** The target disk is
@@ -37,7 +42,7 @@ sudo nix run github:lcleveland/itera.personal#installer
 
 The installer is built from itera upstream's `itera.lib.mkInstaller` (wired up in
 [flake.nix](flake.nix)); it prompts you to **pick the host** (`dream` /
-`framework`) and the **disk**, confirms the destructive wipe, then hands off to
+`framework` / `x1yoga`) and the **disk**, confirms the destructive wipe, then hands off to
 `disko-install` (partition + format + mount + `nixos-install`, in one step). Skip
 either prompt by passing them as arguments:
 
@@ -53,8 +58,9 @@ at the checkout:
 sudo ITERA_INSTALL_FLAKE=. nix run .#installer
 ```
 
-On `framework` (which encrypts the disk), the installer reads the FDE policy from
-the host's evaluated `itera.disko.encryption.*` config and drives it hands-free:
+On the laptops `framework` and `x1yoga` (which encrypt the disk), the installer
+reads the FDE policy from the host's evaluated `itera.disko.encryption.*` config
+and drives it hands-free:
 it **prompts for a new encryption passphrase** before formatting, then enrolls the
 machine's TPM2 in the same pass so subsequent boots unlock with no prompt — the
 passphrase you typed stays as the recovery fallback. There is no post-install
@@ -78,10 +84,10 @@ After it finishes:
 
 ## Rebuild
 
-Both hosts configure itera's update battery ([hosts/common.nix](hosts/common.nix)
+Every host configures itera's update battery ([hosts/common.nix](hosts/common.nix)
 sets `itera.update.flake` to `github:lcleveland/itera.personal`, and each host sets
-`itera.update.configuration` to its flake attr — `dream` / `framework` — since the
-hostnames `DREAM` / `LS-04380` don't match). So the `itera` command needs no
+`itera.update.configuration` to its flake attr — `dream` / `framework` / `x1yoga` —
+since the hostnames don't match the attrs). So the `itera` command needs no
 arguments and no checkout on disk:
 
 ```sh

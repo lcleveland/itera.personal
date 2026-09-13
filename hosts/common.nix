@@ -1,7 +1,7 @@
 # Settings shared by every host. itera's opinionated defaults are already on
 # (opt-out via mkDefault); this file only sets what deviates from them plus the
 # single user.
-{ ... }:
+{ lib, ... }:
 {
   # Apps shared by both hosts, migrated from the old eiros.users.{personal,work}
   # repos. One module per app under ./apps/common.
@@ -69,8 +69,10 @@
     # differs from the hostname.
     update.flake = "github:lcleveland/itera.personal";
 
-    # Both machines are AMD; a host may override.
-    hardware.cpu = "amd";
+    # Most machines here are AMD; mkDefault so a host genuinely can override it
+    # (x1yoga sets "intel"). Without the mkDefault this is a plain definition and
+    # an overriding host errors out with a conflict instead.
+    hardware.cpu = lib.mkDefault "amd";
 
     # Desktop: mango (dwl/wlroots) + DankMaterialShell. mango is opt-in.
     desktop.mango.enable = true;
