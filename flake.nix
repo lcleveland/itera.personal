@@ -25,6 +25,23 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # netskope-mcp — an MCP server over the Netskope REST API v2 (Private Access
+    # publishers and apps, NPA + inline policy, URL lists, event and alert search,
+    # SCIM), so Claude Code can read the tenant instead of clicking through the admin
+    # UI. A flake exposing nixosModules.default (option: services.netskope-mcp.*) and
+    # the Go binary built from source — MIT, nothing unfree, no vendor blob.
+    #
+    # Unlike the `netskope` input below this IS imported for every host (the `modules`
+    # list further down) rather than through specialArgs: it is a *client* of the
+    # tenant API, not a tenant endpoint agent — nothing in it is laptop- or
+    # model-specific, it hooks nothing in the kernel, and the only thing the host it
+    # runs on needs is the token. Enabled in hosts/apps/common/netskope-mcp.nix.
+    # Share nixpkgs.
+    netskope-mcp = {
+      url = "github:lcleveland/netskope-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Netskope Client for Linux (the corporate SASE/SSE endpoint agent).
     # A flake exposing nixosModules.default (option: services.netskope.*) plus the
     # unfree, tenant-specific NSClient.run packaging. Unlike ninjarmm-ncplayer this
@@ -92,7 +109,7 @@
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, netskope, falcon-sensor, freetoken, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, falcon-sensor, freetoken, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -113,6 +130,7 @@
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default
+            netskope-mcp.nixosModules.default
             { nixpkgs.overlays = [ itera.overlays.default ]; }
             ./hosts/common.nix
             hostModule
