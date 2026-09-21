@@ -566,11 +566,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789776794,
-        "narHash": "sha256-FqJohAyZLFB22WC/NZsIRs0c7c58Scni8tNwPpsOVaM=",
+        "lastModified": 1784589780,
+        "narHash": "sha256-ncDkOck7q+adRuWdnqDXIGDE1wiZ+8ircOZZjsHVJng=",
         "owner": "lcleveland",
         "repo": "ninjarmm-ncplayer",
-        "rev": "07e9402b1e68904d39606d9f2c6f89700f6c5a10",
+        "rev": "97dc84fa10104d84b695a7b4396d98aaa05119ac",
         "type": "github"
       },
       "original": {
