@@ -21,7 +21,7 @@
     # A flake exposing nixosModules.default (option: programs.ninjarmm-ncplayer.*);
     # enabled in hosts/common.nix so every host gets it. Share our nixpkgs.
     ninjarmm-ncplayer = {
-      url = "github:lcleveland/ninjarmm-ncplayer/97dc84fa10104d84b695a7b4396d98aaa05119ac"; # pinned: ncplayer 14.35.8480 (15.37.8880 not supported yet)
+      url = "github:lcleveland/ninjarmm-ncplayer";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
