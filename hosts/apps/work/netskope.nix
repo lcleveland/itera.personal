@@ -45,11 +45,9 @@
 
     # Hash of the fetched NSClient.run. NOT universal — Netskope rebuilds the
     # installer per tenant and version, so this pins the exact build the tenant is
-    # currently serving: v141.1.0.2817. Upstream's packaging still hardcodes its own
-    # `version` attr at 141.0.0.2792 (rev bc504f01), so the derivation is NAMED for
-    # the older release until upstream catches up — the payload here is the newer one.
-    # The hash changes whenever the tenant is moved to a new client release, and the
-    # fetch then fails with a hash mismatch.
+    # currently serving: v141.1.0.2817, which upstream's packaging now names and
+    # carries as its offline fallback too. It changes whenever the tenant is moved
+    # to a new client release, and the fetch then fails with a hash mismatch.
     # Re-pin with:
     #
     #   nix store prefetch-file --name NSClient.run \
