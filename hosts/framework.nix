@@ -8,12 +8,14 @@
     itera.hardwareModules.framework-16-7040-amd
     # Work-tenant apps, migrated from the old eiros.users.work repo. They live
     # under apps/work/ (not apps/framework/) because none of them is specific to
-    # this laptop model — x1yoga imports the same three files.
+    # this laptop model — x1yoga imports the same files.
     ./apps/work/smartcard-reader.nix
     # Corporate Netskope client (work tenant only, hence not in common.nix).
     ./apps/work/netskope.nix
     # Corporate CrowdStrike Falcon EDR sensor (work tenant only, as above).
     ./apps/work/falcon-sensor.nix
+    # NetBox MCP server (work network only, as above).
+    ./apps/work/netbox-mcp.nix
   ];
 
   # Panel goes DIM at 97-100% brightness (correct below that). Since 6.14 amdgpu

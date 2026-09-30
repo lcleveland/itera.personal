@@ -2,7 +2,7 @@
 #
 # Same ROLE as `framework` (the work tenant: Netskope, Falcon, smartcard reader,
 # FDE + TPM2, Colemak-DH, printing, fingerprint), different HARDWARE: a 13th-gen
-# Intel convertible instead of the AMD Framework 16. The work-app trio is shared
+# Intel convertible instead of the AMD Framework 16. The work apps are shared
 # from ./apps/work/ rather than duplicated — nothing in those files is specific
 # to a laptop model, only to the tenant.
 { itera, ... }:
@@ -30,6 +30,8 @@
     ./apps/work/netskope.nix
     # Corporate CrowdStrike Falcon EDR sensor (work tenant only, as above).
     ./apps/work/falcon-sensor.nix
+    # NetBox MCP server (work network only, as above).
+    ./apps/work/netbox-mcp.nix
   ];
 
   itera = {

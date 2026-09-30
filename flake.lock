@@ -519,6 +519,26 @@
         "type": "github"
       }
     },
+    "netbox-mcp": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790729283,
+        "narHash": "sha256-Hi6qmv+5kSOZvQd2HIH1vzxLDRptUmLMe48dvmcp4rk=",
+        "owner": "lcleveland",
+        "repo": "netbox-mcp",
+        "rev": "01f3fd4b154643a03bf674eb5d48828ad4754535",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lcleveland",
+        "repo": "netbox-mcp",
+        "type": "github"
+      }
+    },
     "netskope": {
       "inputs": {
         "nixpkgs": [
@@ -753,6 +773,7 @@
         "freetoken": "freetoken",
         "hjem": "hjem",
         "itera": "itera",
+        "netbox-mcp": "netbox-mcp",
         "netskope": "netskope",
         "netskope-mcp": "netskope-mcp",
         "ninjarmm-ncplayer": "ninjarmm-ncplayer",

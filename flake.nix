@@ -42,6 +42,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # netbox-mcp — an MCP server over the NetBox REST API (IPAM/DCIM). Same shape
+    # as netskope-mcp (Go, MIT, nixosModules.default -> services.netbox-mcp.*), but
+    # work-laptops-only: the NetBox it talks to is only on the work network, so it
+    # comes in through specialArgs and is imported by hosts/apps/work/netbox-mcp.nix.
+    # Share nixpkgs.
+    netbox-mcp = {
+      url = "github:lcleveland/netbox-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Netskope Client for Linux (the corporate SASE/SSE endpoint agent).
     # A flake exposing nixosModules.default (option: services.netskope.*) plus the
     # unfree, tenant-specific NSClient.run packaging. Unlike ninjarmm-ncplayer this
@@ -109,7 +119,7 @@
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, falcon-sensor, freetoken, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, netbox-mcp, falcon-sensor, freetoken, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -123,10 +133,11 @@
           # import-time choice, not a `config.itera.*` option). `netskope` rides
           # along for the same reason: it is a host-scoped module import (the work
           # laptops only), which `imports` can't gate on config — as does
-          # `falcon-sensor`, the other work-tenant agent, and `freetoken`, which is
+          # `falcon-sensor`, the other work-tenant agent, `netbox-mcp` (work
+          # network only), and `freetoken`, which is
           # dream-only for the mirror-image reason (it needs the NVIDIA GPU that
           # only dream has).
-          specialArgs = { inherit itera netskope falcon-sensor freetoken; };
+          specialArgs = { inherit itera netskope netbox-mcp falcon-sensor freetoken; };
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default
