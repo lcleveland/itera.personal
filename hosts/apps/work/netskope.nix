@@ -53,10 +53,10 @@
     #   nix store prefetch-file --name NSClient.run \
     #     "https://download-lselectric.goskope.com/dlr/linux/get"
     #
-    # (Verified current as of 2026-09-27.) The client cannot self-update on NixOS
+    # (Verified current as of 2026-10-01: 141.1.7.2827.) The client cannot self-update on NixOS
     # (immutable store), so bumping this hash IS the update path — which is why
     # `autoUpdate` is left at its default of false.
-    hash = "sha256-DD0gR/ZGz7GDjHWxwcsFVczMxDnRyonq8l2/6U/8dy4=";
+    hash = "sha256-Eo3bhli0e6Dacvob3MNch/1QZ6hf6JWclFx/111qtxI=";
 
     # Tray UI — two per-user services, both wired to graphical-session.target:
     # stagentapp (the watchdog / session IPC broker) and stagentui (the GTK tray icon
