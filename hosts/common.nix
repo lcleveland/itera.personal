@@ -54,6 +54,12 @@
   # ninjarmm-ncplayer flake input, imported for every host in flake.nix.
   programs.ninjarmm-ncplayer.enable = true;
 
+  # NumLock on at the login screen too. The greeter runs its own mango instance
+  # that never reads the per-user extraConfig below. itera sets customConfig with
+  # mkDefault, so this also has to be mkDefault (same priority) or it replaces
+  # itera's monitor/xkb lines instead of being appended to them.
+  programs.dms-greeter.compositor.customConfig = lib.mkDefault (lib.mkAfter "numlockon=1");
+
   itera = {
     # Claude Code CLI, system-wide + state persisted across the wiped root.
     ai.claude.enable = true;
@@ -93,6 +99,10 @@
       # after the first login with `passwd`. (A secrets-managed password can be
       # added later — e.g. agenix + users.users.lcleveland.hashedPasswordFile.)
       initialPassword = "lcleveland";
+
+      # NumLock on at session start (mango defaults numlockon=0). extraConfig is
+      # `lines`, so this merges with any host-level extraConfig (e.g. framework).
+      programs.mango.extraConfig = "numlockon=1";
 
       # Claude Code is registered in Zed's agent panel automatically by itera's
       # ACP battery (see the Claude note at the top of this file) — no per-user
