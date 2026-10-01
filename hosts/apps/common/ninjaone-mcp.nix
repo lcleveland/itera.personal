@@ -22,6 +22,14 @@
     #   printf %s '<secret>' | sudo install -m 0400 /dev/stdin /persist/secrets/ninjaone-client-secret
     clientSecretFile = "/persist/secrets/ninjaone-client-secret";
 
+    # Must be explicit: with the default [ ] the server omits `scope` and
+    # NinjaOne's token endpoint answers 400 invalid_scope. `control` (remote
+    # access) is left off — no tool uses it.
+    scopes = [
+      "monitoring"
+      "management"
+    ];
+
     # Full write access, deliberately — including scripts (often as SYSTEM) and
     # device admin (decommission), which the module warns about on every rebuild.
     # Every write needs the `management` scope on the API app, and the server
