@@ -531,6 +531,26 @@
         "type": "github"
       }
     },
+    "ninjaone-mcp": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790881562,
+        "narHash": "sha256-eOMRWqZil2H18iUaoWIolk1NeiGTmLfCCcpX6OxtqCA=",
+        "owner": "lcleveland",
+        "repo": "ninjaone-mcp",
+        "rev": "c7a74eb25488427b7284713c01ffb9772f0ef179",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lcleveland",
+        "repo": "ninjaone-mcp",
+        "type": "github"
+      }
+    },
     "ninjarmm-ncplayer": {
       "inputs": {
         "nixpkgs": [
@@ -728,6 +748,7 @@
         "netbox-mcp": "netbox-mcp",
         "netskope": "netskope",
         "netskope-mcp": "netskope-mcp",
+        "ninjaone-mcp": "ninjaone-mcp",
         "ninjarmm-ncplayer": "ninjarmm-ncplayer",
         "nixpkgs": "nixpkgs"
       }

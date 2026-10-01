@@ -14,6 +14,7 @@
     ./apps/common/caido.nix
     ./apps/common/obs.nix
     ./apps/common/netskope-mcp.nix
+    ./apps/common/ninjaone-mcp.nix
   ];
 
   # Claude Code, both ways — all from itera's `itera.ai.claude.enable` battery
