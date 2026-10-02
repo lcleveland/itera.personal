@@ -13,8 +13,11 @@
     enable = true;
     region = "us2";
 
-    # API Services (machine-to-machine) app. The ID is not secret.
-    clientId = "7GZWpPHx2PIoNw_rBzbQzDjncKo";
+    # API Services (machine-to-machine) app ID, read via systemd LoadCredential
+    # so hosts can differ. Create before rebuilding, on EVERY host:
+    #
+    #   printf %s '<client id>' | sudo install -m 0400 /dev/stdin /persist/secrets/ninjaone-client-id
+    clientIdFile = "/persist/secrets/ninjaone-client-id";
 
     # Client secret, read via systemd LoadCredential. Create before the first
     # rebuild that enables this, on EVERY host:
