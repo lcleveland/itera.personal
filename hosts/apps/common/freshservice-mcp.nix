@@ -19,7 +19,19 @@
     #   printf %s '<key>' | sudo install -m 0400 /dev/stdin /persist/secrets/freshservice-api-key
     apiKeyFile = "/persist/secrets/freshservice-api-key";
 
-    # Read-only for now: every allow* write capability is left at its false
-    # default. Turn on allowTickets etc. here when writes are wanted.
+    # Full write access, deliberately — including ticket replies (emails
+    # requesters and third parties), approvals (as the API key's agent) and ops
+    # (public status pages, on-call), which the module warns about on every
+    # rebuild. All tool groups are already on by default.
+    allowTickets = true;
+    allowTicketReplies = true;
+    allowItil = true;
+    allowAssets = true;
+    allowKnowledge = true;
+    allowProjects = true;
+    allowPeople = true;
+    allowApprovals = true;
+    allowOps = true;
+    allowCustomObjects = true;
   };
 }
