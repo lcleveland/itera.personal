@@ -558,11 +558,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790881562,
-        "narHash": "sha256-eOMRWqZil2H18iUaoWIolk1NeiGTmLfCCcpX6OxtqCA=",
+        "lastModified": 1790946268,
+        "narHash": "sha256-v3YSGBexjH27YLkLLlSxCjlIDfwrr0YwCKyamkGVPWw=",
         "owner": "lcleveland",
         "repo": "ninjaone-mcp",
-        "rev": "c7a74eb25488427b7284713c01ffb9772f0ef179",
+        "rev": "ef8f90f16804b57c0b41f17a082acc5d6aaeb8ee",
         "type": "github"
       },
       "original": {
