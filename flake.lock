@@ -294,6 +294,26 @@
         "type": "github"
       }
     },
+    "freshservice-mcp": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790902902,
+        "narHash": "sha256-Wf1FflYpotCJNHnzxtz+al2Otjw/MDO3COALSmOMjSc=",
+        "owner": "lcleveland",
+        "repo": "freshservice-mcp",
+        "rev": "0043dab673886f589fe99891473dee71ce87363c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lcleveland",
+        "repo": "freshservice-mcp",
+        "type": "github"
+      }
+    },
     "git-hooks": {
       "inputs": {
         "flake-compat": "flake-compat_2",
@@ -743,6 +763,7 @@
       "inputs": {
         "falcon-sensor": "falcon-sensor",
         "freetoken": "freetoken",
+        "freshservice-mcp": "freshservice-mcp",
         "hjem": "hjem",
         "itera": "itera",
         "netbox-mcp": "netbox-mcp",

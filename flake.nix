@@ -51,6 +51,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # freshservice-mcp — an MCP server over the Freshservice API v2. Same shape and
+    # reasoning as ninjaone-mcp (Go, nixosModules.default ->
+    # services.freshservice-mcp.*, a cloud API client), so it is imported for every
+    # host and enabled in hosts/apps/common/freshservice-mcp.nix. Share nixpkgs.
+    freshservice-mcp = {
+      url = "github:lcleveland/freshservice-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # netbox-mcp — an MCP server over the NetBox REST API (IPAM/DCIM). Same shape
     # as netskope-mcp (Go, MIT, nixosModules.default -> services.netbox-mcp.*), but
     # work-laptops-only: the NetBox it talks to is only on the work network, so it
@@ -128,7 +137,7 @@
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, ninjaone-mcp, netbox-mcp, falcon-sensor, freetoken, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, ninjaone-mcp, freshservice-mcp, netbox-mcp, falcon-sensor, freetoken, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -152,6 +161,7 @@
             ninjarmm-ncplayer.nixosModules.default
             netskope-mcp.nixosModules.default
             ninjaone-mcp.nixosModules.default
+            freshservice-mcp.nixosModules.default
             { nixpkgs.overlays = [ itera.overlays.default ]; }
             ./hosts/common.nix
             hostModule
