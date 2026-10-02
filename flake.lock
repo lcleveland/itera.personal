@@ -301,11 +301,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790904085,
-        "narHash": "sha256-I0w4xx5DsFkowOtDgH+lzxTw0myr65ND4x73Xnrzess=",
+        "lastModified": 1790904840,
+        "narHash": "sha256-paV/E6K4EfDRjWtH4Ex1Ji8qQoaN12rar7tvmSXN65M=",
         "owner": "lcleveland",
         "repo": "freshservice-mcp",
-        "rev": "2a9ad919b19f606cc95fca85705a3035c7414d2b",
+        "rev": "527c57827ff8c1cb210f355a54f8579c85082d1c",
         "type": "github"
       },
       "original": {
