@@ -58,11 +58,19 @@
     # it to tell a bad token apart from a too-narrow role.
     apiTokenFile = "/persist/secrets/netskope-api-token";
 
-    # Default, stated out loud because it is the one that matters: with this false
-    # the delete actions are never registered, so they are absent from the schema
-    # the model is shown rather than refused at call time. Netskope has no undo.
-    # (`update` is not gated and can do as much damage — that is what the View-only
-    # role above is for.)
-    allowDestructive = false;
+    # Registers the delete actions (publishers, private apps, policy rules, SCIM
+    # objects). Off upstream by default, since with it false they are absent from
+    # the schema the model is shown. On deliberately: Netskope has no undo, so the
+    # role on the token is now the only thing between a misread request and a
+    # deleted object. A View-only role still refuses every delete.
+    allowDestructive = true;
+
+    # Every tool group, including the three upstream leaves out of its default
+    # (devices, ips, aig) and the real-time protection policy tools, which have
+    # their own switch because Netskope enables those routes per tenant. All on
+    # to test what the tenant answers. The View-only role above is what keeps
+    # `ips` (tenant-wide threat blocking) and the rest from changing anything.
+    toolGroups = [ "core" "npa" "policy" "events" "scim" "reporting" "steering" "dlp" "incidents" "devices" "ips" "aig" ];
+    enableInternetAccess = true;
   };
 }
