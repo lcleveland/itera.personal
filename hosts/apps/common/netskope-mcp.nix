@@ -65,12 +65,14 @@
     # deleted object. A View-only role still refuses every delete.
     allowDestructive = true;
 
-    # Every tool group, including the three upstream leaves out of its default
-    # (devices, ips, aig) and the real-time protection policy tools, which have
-    # their own switch because Netskope enables those routes per tenant. All on
-    # to test what the tenant answers. The View-only role above is what keeps
-    # `ips` (tenant-wide threat blocking) and the rest from changing anything.
-    toolGroups = [ "core" "npa" "policy" "events" "scim" "reporting" "steering" "dlp" "incidents" "devices" "ips" "aig" ];
-    enableInternetAccess = true;
+    # Every tool group that answers on this tenant. Left out until Netskope
+    # enables their APIs here (requested from support; every call 403s even
+    # under a full-access role until then): `dlp`, `aig`, and the real-time
+    # protection tools behind enableInternetAccess. DNS profiles and remote
+    # proxies are tenant-gated the same way, and network profiles, domain
+    # fronting, IPS signature overrides and UBA watchlists are unlicensed, but
+    # those share groups with tools that work, so they stay registered and 403.
+    # `ips` changes threat blocking tenant-wide; the token's role is the gate.
+    toolGroups = [ "core" "npa" "policy" "events" "scim" "reporting" "steering" "incidents" "devices" "ips" ];
   };
 }
