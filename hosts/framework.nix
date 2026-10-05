@@ -138,13 +138,13 @@
     #                        gesture", the macOS-style direction. Set on the
     #                        trackpad AND the external mouse so the direction is
     #                        the same whichever pointer is in hand.
-    #   sloppyfocus          mango defaults it to 1 — focus follows the cursor, so
+    #   sloppy_focus          mango defaults it to 1 — focus follows the cursor, so
     #                        merely passing the pointer over a window steals focus
     #                        from what you were typing in. 0 = click to focus.
     users.lcleveland.programs.mango.extraConfig = ''
       trackpad_natural_scrolling=1
       mouse_natural_scrolling=1
-      sloppyfocus=0
+      sloppy_focus=0
     '';
     # nvidia stays OFF (itera.nvidia is opt-in / default false) — matches eiros.
   };

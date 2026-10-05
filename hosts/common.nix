@@ -60,7 +60,7 @@
   # that never reads the per-user extraConfig below. itera sets customConfig with
   # mkDefault, so this also has to be mkDefault (same priority) or it replaces
   # itera's monitor/xkb lines instead of being appended to them.
-  programs.dms-greeter.compositor.customConfig = lib.mkDefault (lib.mkAfter "numlockon=1");
+  programs.dms-greeter.compositor.customConfig = lib.mkDefault (lib.mkAfter "numlock_on=1");
 
   itera = {
     # Claude Code CLI, system-wide + state persisted across the wiped root.
@@ -102,9 +102,9 @@
       # added later — e.g. agenix + users.users.lcleveland.hashedPasswordFile.)
       initialPassword = "lcleveland";
 
-      # NumLock on at session start (mango defaults numlockon=0). extraConfig is
+      # NumLock on at session start (mango defaults numlock_on=0). extraConfig is
       # `lines`, so this merges with any host-level extraConfig (e.g. framework).
-      programs.mango.extraConfig = "numlockon=1";
+      programs.mango.extraConfig = "numlock_on=1";
 
       # Claude Code is registered in Zed's agent panel automatically by itera's
       # ACP battery (see the Claude note at the top of this file) — no per-user
