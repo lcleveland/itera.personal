@@ -538,11 +538,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791219083,
-        "narHash": "sha256-bf79udJ3hO3IR1m/QS5luDAikPg06tvna74PDqOa2Kk=",
+        "lastModified": 1791221123,
+        "narHash": "sha256-eW25OPi4snxMka7YpBkzCEEeGT6+ZUWFbkQxFqMx1Lk=",
         "owner": "lcleveland",
         "repo": "netskope-mcp",
-        "rev": "23942c31e4aece91353dd8a1daa54fef7af93aac",
+        "rev": "5aff9e9413b7fc9fb4291db86173e58b90df37b4",
         "type": "github"
       },
       "original": {
