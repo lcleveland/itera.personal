@@ -67,11 +67,11 @@
 
     # Every tool group that answers on this tenant. Left out until Netskope
     # enables their APIs here (requested from support; every call 403s even
-    # under a full-access role until then): `dlp`, `aig`, and the real-time
-    # protection tools behind enableInternetAccess. DNS profiles and remote
-    # proxies are tenant-gated the same way, and network profiles, domain
-    # fronting, IPS signature overrides and UBA watchlists are unlicensed, but
-    # those share groups with tools that work, so they stay registered and 403.
+    # under a full-access role until then): `dlp` and the real-time protection
+    # tools behind enableInternetAccess. `aig` is left out as unlicensed. DNS
+    # profiles, remote proxies, network profiles, domain fronting, IPS signature
+    # overrides and UBA watchlists are unlicensed too, but share groups with
+    # tools that work, so they stay registered and 403.
     # `ips` changes threat blocking tenant-wide; the token's role is the gate.
     toolGroups = [ "core" "npa" "policy" "events" "scim" "reporting" "steering" "incidents" "devices" "ips" ];
   };
