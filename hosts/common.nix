@@ -57,6 +57,18 @@
   # ninjarmm-ncplayer flake input, imported for every host in flake.nix.
   programs.ninjarmm-ncplayer.enable = true;
 
+  # Workaround: ncplayer leaves Shift stuck when right Shift is used, so remap
+  # right Shift to left Shift at the device level (below Wayland/XWayland).
+  # TODO: periodically try reverting this after ncplayer updates to see if
+  # NinjaOne has fixed it upstream.
+  services.keyd = {
+    enable = true;
+    keyboards.default = {
+      ids = [ "*" ];
+      settings.main.rightshift = "leftshift";
+    };
+  };
+
   # NumLock on at the login screen too. The greeter runs its own mango instance
   # that never reads the per-user extraConfig below. itera sets customConfig with
   # mkDefault, so this also has to be mkDefault (same priority) or it replaces
