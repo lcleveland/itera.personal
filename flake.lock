@@ -159,11 +159,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791487386,
-        "narHash": "sha256-2p05VBlfRrEYuR7Av4gK3mGumpWvhz6kCMg6lqNo+Bs=",
+        "lastModified": 1791490128,
+        "narHash": "sha256-0z4oNZ9yYWFdy6B9eaIns6pFcLaiSdwld8oKD2MGuXc=",
         "owner": "lcleveland",
         "repo": "falcon-mcp",
-        "rev": "49d0ed41994be7a11efb3483c16d4a0659675158",
+        "rev": "d8e36da5400cee2c7af29b2f87363fa704a74f4b",
         "type": "github"
       },
       "original": {
