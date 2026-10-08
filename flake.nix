@@ -60,6 +60,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # falcon-mcp — an MCP server over the CrowdStrike Falcon API. Same shape and
+    # reasoning as ninjaone-mcp (Go, nixosModules.default -> services.falcon-mcp.*,
+    # a cloud API client), so it is imported for every host and enabled in
+    # hosts/apps/common/falcon-mcp.nix. Share nixpkgs.
+    falcon-mcp = {
+      url = "github:lcleveland/falcon-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # netbox-mcp — an MCP server over the NetBox REST API (IPAM/DCIM). Same shape
     # as netskope-mcp (Go, MIT, nixosModules.default -> services.netbox-mcp.*), but
     # work-laptops-only: the NetBox it talks to is only on the work network, so it
@@ -137,7 +146,7 @@
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, ninjaone-mcp, freshservice-mcp, netbox-mcp, falcon-sensor, freetoken, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, ninjaone-mcp, freshservice-mcp, falcon-mcp, netbox-mcp, falcon-sensor, freetoken, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -162,6 +171,7 @@
             netskope-mcp.nixosModules.default
             ninjaone-mcp.nixosModules.default
             freshservice-mcp.nixosModules.default
+            falcon-mcp.nixosModules.default
             { nixpkgs.overlays = [ itera.overlays.default ]; }
             ./hosts/common.nix
             hostModule

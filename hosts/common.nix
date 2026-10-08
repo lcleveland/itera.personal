@@ -16,6 +16,7 @@
     ./apps/common/netskope-mcp.nix
     ./apps/common/ninjaone-mcp.nix
     ./apps/common/freshservice-mcp.nix
+    ./apps/common/falcon-mcp.nix
     ./apps/common/sshpass.nix
   ];
 

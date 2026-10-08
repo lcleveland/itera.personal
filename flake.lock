@@ -152,6 +152,26 @@
         "type": "github"
       }
     },
+    "falcon-mcp": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791483437,
+        "narHash": "sha256-pywIrP2lZ+q8P67ua99PCxCH6auCEtaWLOE7E/2R+Is=",
+        "owner": "lcleveland",
+        "repo": "falcon-mcp",
+        "rev": "ec8345b3a35ab4f06d9d9487f6ba92a9a339fb98",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lcleveland",
+        "repo": "falcon-mcp",
+        "type": "github"
+      }
+    },
     "falcon-sensor": {
       "inputs": {
         "nixpkgs": [
@@ -762,6 +782,7 @@
     },
     "root": {
       "inputs": {
+        "falcon-mcp": "falcon-mcp",
         "falcon-sensor": "falcon-sensor",
         "freetoken": "freetoken",
         "freshservice-mcp": "freshservice-mcp",
