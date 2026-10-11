@@ -129,18 +129,17 @@
       };
     };
 
-    # Pointer input. Neither knob is a curated itera option, so they go through
-    # the per-user `extraConfig` escape hatch, which the hjem renderer appends
-    # verbatim to ~/.config/mango/config.conf (last section in the file).
+    # Pointer input. trackpad_natural_scrolling is not a curated itera option, so
+    # it goes through the per-user `extraConfig` escape hatch, which the hjem
+    # renderer appends verbatim to ~/.config/mango/config.conf (last section in
+
+    # the file).
     #
-    #   *_natural_scrolling  mango defaults BOTH to 0 (content moves opposite the
-    #                        fingers/wheel). 1 = natural/"content follows the
-    #                        gesture", the macOS-style direction. Set on the
-    #                        trackpad AND the external mouse so the direction is
-    #                        the same whichever pointer is in hand.
+    #   mango defaults it to 0 (content moves opposite the fingers). 1 = natural
+    #   ("content follows the gesture", the macOS-style direction). The external
+    #   mouse wheel keeps the default direction.
     users.lcleveland.programs.mango.extraConfig = ''
       trackpad_natural_scrolling=1
-      mouse_natural_scrolling=1
     '';
     # nvidia stays OFF (itera.nvidia is opt-in / default false) — matches eiros.
   };
