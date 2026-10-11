@@ -347,11 +347,11 @@
         "sops-nix": "sops-nix"
       },
       "locked": {
-        "lastModified": 1791737312,
-        "narHash": "sha256-aLgXPW4SLF/dW64iqFRnBYW8Qr2KCMXxmDDcDY0Lbqo=",
+        "lastModified": 1791737977,
+        "narHash": "sha256-vELUo4BvzuLjgEXsSMqslTjvnHTPU5HxzghJ7+E2oUI=",
         "owner": "lcleveland",
         "repo": "itera",
-        "rev": "77f3ed6d359c789298458797990a6dbfc29a6999",
+        "rev": "9f0412a51db76993cbc5c3b6ebce88ed878d1b80",
         "type": "github"
       },
       "original": {
