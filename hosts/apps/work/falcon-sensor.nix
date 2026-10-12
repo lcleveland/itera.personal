@@ -180,7 +180,7 @@
     # resolution rather than the sensor. The tray hands its icons over D-Bus by
     # absolute path (SNI's IconThemePath) and also installs them into hicolor for
     # hosts that resolve names through the icon theme instead, while itera points
-    # QS_ICON_THEME at Adwaita; hicolor is the spec's universal fallback, so it
+    # QS_ICON_THEME at the look's Papirus; hicolor is the spec's universal fallback, so it
     # should resolve. `falcon-sensor-tray --print-state` reads the same status file
     # headlessly, which separates a broken icon from a broken state.
     tray.enable = true;
