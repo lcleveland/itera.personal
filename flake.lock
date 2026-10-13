@@ -159,11 +159,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791737307,
-        "narHash": "sha256-NsL4DexqsjeXigvhQJkStd12xnj1dVFexY85XC1mHcY=",
+        "lastModified": 1791908604,
+        "narHash": "sha256-+dJOr5R804iIKhifgy6KVGnZMy4B57ax8PhBI/FQ0XY=",
         "owner": "lcleveland",
         "repo": "falcon-mcp",
-        "rev": "cb6096ac5c56ba597d18e5377e46f1715dca4094",
+        "rev": "03231b6bf874644b620816abadf95161db9ad06b",
         "type": "github"
       },
       "original": {
@@ -345,11 +345,11 @@
         "sops-nix": "sops-nix"
       },
       "locked": {
-        "lastModified": 1791901351,
-        "narHash": "sha256-C+ICyKsjdszQHsTv04YtCCk5V3yuf3rKM/QtT6TAkHo=",
+        "lastModified": 1791913613,
+        "narHash": "sha256-TMjFcN38HfIu71vAxBLD4dVvyZl2QmRp4jb1zKpEXLY=",
         "owner": "lcleveland",
         "repo": "itera",
-        "rev": "fdf9f635503c083d8f95c9d368d798825eb905b5",
+        "rev": "c8ab2f98dae02a04ac079c8625ba3bad802ac70c",
         "type": "github"
       },
       "original": {
