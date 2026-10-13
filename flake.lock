@@ -417,11 +417,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791737306,
-        "narHash": "sha256-nwMG4NzYgbUyhQg/KzqzhIEFuoRvWQAzZavQ1J8aEOA=",
+        "lastModified": 1791900940,
+        "narHash": "sha256-WORGQO6QYxcEowuWyPpEdEWGJLq1M1tLRZyd63NlvZw=",
         "owner": "lcleveland",
         "repo": "microsoft-directory-mcp",
-        "rev": "547e666f26ed43df5a82d446478490b7d2980060",
+        "rev": "66b84d7966e9f78e9a0931c291115521cef82909",
         "type": "github"
       },
       "original": {
