@@ -27,6 +27,9 @@
       forest = "lselectric.local"; # TODO: confirm forest root DNS name
       bindUser = "svc-directory-mcp@lselectric.local"; # UPN suffix follows the forest guess above
       bindPasswordFile = "/persist/secrets/msdir-ad-bind-password";
+      # ponytail: DC certs aren't verified, so the bind password can go to an
+      # impostor DC. Swap for `caFile` (the enterprise CA PEM) when it's on hand.
+      insecureSkipVerify = true;
     };
 
     entra = {
