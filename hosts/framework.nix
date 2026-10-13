@@ -16,6 +16,8 @@
     ./apps/work/falcon-sensor.nix
     # NetBox MCP server (work network only, as above).
     ./apps/work/netbox-mcp.nix
+    # AD + Entra ID MCP server (the domain controllers are work network only).
+    ./apps/work/microsoft-directory-mcp.nix
   ];
 
   # Panel goes DIM at 97-100% brightness (correct below that). Since 6.14 amdgpu

@@ -79,6 +79,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # microsoft-directory-mcp — an MCP server over on-prem Active Directory (LDAPS)
+    # and Entra ID (Graph). Same shape as netbox-mcp (Go, nixosModules.default ->
+    # services.microsoft-directory-mcp.*) and work-laptops-only for the same
+    # reason: the AD domain controllers are only on the work network. Comes in
+    # through specialArgs, imported by hosts/apps/work/microsoft-directory-mcp.nix.
+    # Share nixpkgs.
+    microsoft-directory-mcp = {
+      url = "github:lcleveland/microsoft-directory-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Netskope Client for Linux (the corporate SASE/SSE endpoint agent).
     # A flake exposing nixosModules.default (option: services.netskope.*) plus the
     # unfree, tenant-specific NSClient.run packaging. Unlike ninjarmm-ncplayer this
@@ -146,7 +157,7 @@
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, ninjaone-mcp, freshservice-mcp, falcon-mcp, netbox-mcp, falcon-sensor, freetoken, ... }:
+    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, ninjaone-mcp, freshservice-mcp, falcon-mcp, netbox-mcp, microsoft-directory-mcp, falcon-sensor, freetoken, ... }:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -160,11 +171,11 @@
           # import-time choice, not a `config.itera.*` option). `netskope` rides
           # along for the same reason: it is a host-scoped module import (the work
           # laptops only), which `imports` can't gate on config — as does
-          # `falcon-sensor`, the other work-tenant agent, `netbox-mcp` (work
-          # network only), and `freetoken`, which is
+          # `falcon-sensor`, the other work-tenant agent, `netbox-mcp` and
+          # `microsoft-directory-mcp` (work network only), and `freetoken`, which is
           # dream-only for the mirror-image reason (it needs the NVIDIA GPU that
           # only dream has).
-          specialArgs = { inherit itera netskope netbox-mcp falcon-sensor freetoken; };
+          specialArgs = { inherit itera netskope netbox-mcp microsoft-directory-mcp falcon-sensor freetoken; };
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default

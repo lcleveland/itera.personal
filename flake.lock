@@ -410,6 +410,26 @@
         "type": "github"
       }
     },
+    "microsoft-directory-mcp": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791737306,
+        "narHash": "sha256-nwMG4NzYgbUyhQg/KzqzhIEFuoRvWQAzZavQ1J8aEOA=",
+        "owner": "lcleveland",
+        "repo": "microsoft-directory-mcp",
+        "rev": "547e666f26ed43df5a82d446478490b7d2980060",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lcleveland",
+        "repo": "microsoft-directory-mcp",
+        "type": "github"
+      }
+    },
     "netbox-mcp": {
       "inputs": {
         "nixpkgs": [
@@ -635,6 +655,7 @@
         "freshservice-mcp": "freshservice-mcp",
         "hjem": "hjem",
         "itera": "itera",
+        "microsoft-directory-mcp": "microsoft-directory-mcp",
         "netbox-mcp": "netbox-mcp",
         "netskope": "netskope",
         "netskope-mcp": "netskope-mcp",
