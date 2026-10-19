@@ -263,11 +263,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792419480,
-        "narHash": "sha256-fY1Hl4NQ0ZCssBiKxbaOA/nQflozQWQ3+cTwFjhnZxM=",
+        "lastModified": 1792426334,
+        "narHash": "sha256-vnzxmkRtMgmvo23dlz4jSWccRzFB5s6A4tAwipl243E=",
         "owner": "lcleveland",
         "repo": "freshservice-mcp",
-        "rev": "d619cfc86a9646a330a25bef0ef1d8edf1e2918d",
+        "rev": "be01429f16ad3095bdc9fe123fd5f384f51177a1",
         "type": "github"
       },
       "original": {
@@ -345,11 +345,11 @@
         "sops-nix": "sops-nix"
       },
       "locked": {
-        "lastModified": 1792369729,
-        "narHash": "sha256-UVUO9/tPUc0zVKH6wsQ0Ah5IiNCs5oZ4wjng9UGFOs8=",
+        "lastModified": 1792447916,
+        "narHash": "sha256-C6eg8kQl2foQ+469kgYTkbylm6mvpF2VG7DdRHuVRUE=",
         "owner": "lcleveland",
         "repo": "itera",
-        "rev": "91a5429143df8fd6246219dd8028bf94ff2950a0",
+        "rev": "089e27e5a9cc94cdf95eb281d1cef58cdb9b7595",
         "type": "github"
       },
       "original": {
