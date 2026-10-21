@@ -1,5 +1,5 @@
 # framework — Framework 16 work laptop (eiros hostname LS-04380).
-{ itera, lib, ... }:
+{ itera, lib, pkgs, ... }:
 {
   # Framework 16 (AMD Ryzen 7040) hardware quirks, re-exported by itera from
   # nixos-hardware. Board selection is an import-time choice the module system
@@ -40,6 +40,22 @@
   boot.kernelParams = lib.mkAfter [ "amdgpu.dcdebugmask=0x40010" ];
 
   itera = {
+    # nixpkgs' framework-laptop-kmod installs the bare .ko by hand, so kbuild's
+    # signing step never writes the .ko.cer that aggregateModules now cats
+    # ("cat: extra/framework_laptop.ko.cer: No such file"). Install through
+    # modules_install instead. ponytail: drop once nixpkgs fixes the package.
+    boot.kernelPackages = pkgs.linuxPackages_latest.extend (
+      _: super: {
+        framework-laptop-kmod = super.framework-laptop-kmod.overrideAttrs {
+          installPhase = ''
+            runHook preInstall
+            make -C ${super.kernel.dev}/lib/modules/${super.kernel.modDirVersion}/build M="$PWD" INSTALL_MOD_PATH=$out $makeFlags modules_install
+            runHook postInstall
+          '';
+        };
+      }
+    );
+
     networking.hostName = "LS-04380";
     hardware.cpu = "amd";
 
