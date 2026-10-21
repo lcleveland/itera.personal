@@ -47,7 +47,9 @@
     # selects the installer and verifies it — there is nothing else to pin, and
     # bumping this IS the upgrade path.
     #
-    # This is 8.10.0-19402, the build upstream verified against the live tenant.
+    # This is 8.11.0-19508 (falcon-sensor_8.11.0-19508_amd64.deb, sha256
+    # efe5dc64...0aefc). Bumped from 8.10.0-19402 on 2026-10-21: on kernel 7.3.0
+    # that build fell into RFM ("BPF program-load error, code=0xE00400AD").
     # List what this tenant can install, each with the line to paste here:
     #
     #   nix run github:lcleveland/falcon-sensor#find-sensor -- \
@@ -58,7 +60,7 @@
     # same config could land on different sensors, and every boot would have to ask
     # the API which one to use. With it set, a host that already has this sensor does
     # NO network I/O at boot — the .installed-hash check happens before authentication.
-    hash = "sha256-RVNTBhFgWCM2y2bT4POM6btnvXiOFReoL1LvODFvVs8=";
+    hash = "sha256-7+XcZDw9wpLix9/UaYMV8Jjp12WE+jrIMCmMAgJQrvw=";
 
     # Sensor Download API credentials. Mandatory: the module asserts on both, since
     # without them the host cannot download the sensor at all.
@@ -129,7 +131,8 @@
     # real detection and prevention rather than only heartbeats and inventory. Do not
     # treat that as guaranteed across kernel bumps: this is CrowdStrike's supported-
     # kernel list, it moves without reference to us, and a NixOS kernel update is
-    # exactly the kind of change that can silently drop the host into RFM. Re-check
+    # exactly the kind of change that can silently drop the host into RFM — as
+    # 7.3.0 did to 8.10.0-19402 (see `hash` above). Re-check
     # after kernel upgrades with:
     #
     #   sudo /opt/CrowdStrike/falconctl -g --rfm-state --rfm-reason --version --aid
