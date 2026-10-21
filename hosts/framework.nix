@@ -119,31 +119,39 @@
 
     # Monitor layout (origin top-left, +x right / +y down):
     #   eDP-1 laptop on the left, bottom-aligned with the ultrawide.
-    #   DP-11 49" super-ultrawide (5120x1440 @165) to the right of the laptop.
-    #   DP-10 Lenovo T24i-10 (upside down) flush above the ultrawide's top-left
+    #   ultrawide: 49" super-ultrawide (5120x1440 @165) to the right of the laptop.
+    #   lenovo: Lenovo T24i-10 (upside down) flush above the ultrawide's top-left
     #     corner (edges meet at y=1080, no overlap).
+    # The dock is DP-MST, so its connectors get a new number on every replug
+    # (DP-10/11, then DP-12/13, ...): match those by model + serial, not name.
     programs.mango.monitors = {
       "eDP-1" = {
         width = 2560;
         height = 1600;
         refresh = 165;
         x = 0;
-        y = 920; # bottom-aligned with DP-11 (1080 + 1440 - 1600)
+        y = 920; # bottom-aligned with the ultrawide (1080 + 1440 - 1600)
       };
-      "DP-10" = {
+      lenovo = {
+        name = "^DP-[0-9]+$";
+        model = "LEN T24i-10";
+        serial = "VNA4B1P6";
         width = 1920;
         height = 1080;
         refresh = 60;
-        x = 2560; # left-aligned with DP-11
-        y = 0; # sits directly above DP-11 (bottom edge at y=1080)
+        x = 2560; # left-aligned with the ultrawide
+        y = 0; # sits directly above the ultrawide (bottom edge at y=1080)
         transform = "180"; # panel physically mounted upside down
       };
-      "DP-11" = {
+      ultrawide = {
+        name = "^DP-[0-9]+$";
+        model = "XG49DH16C";
+        serial = "000000000001";
         width = 5120;
         height = 1440;
         refresh = 165;
         x = 2560; # right of the laptop
-        y = 1080; # below DP-10
+        y = 1080; # below the lenovo
       };
     };
 
