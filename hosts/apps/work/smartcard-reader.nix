@@ -8,7 +8,7 @@ let
   # Switch an OMNIKEY 5x27CK from Keyboard Wedge to CCID mode.
   # Per HID docs this is a HID Set Feature Report (report id 0x00, bytes
   # 0xA5 0x5A) to the KBW-mode device (076b:5428). It then re-enumerates as
-  # the CCID composite device 076b:5A27, which the bundled ccid driver
+  # the CCID composite device 076b:5427, which the bundled ccid driver
   # already supports. hid uses hidraw, so no kernel-driver detach is needed.
   # NOTE: nixpkgs python3Packages.hid exposes the hid.Device / hid.HIDException
   # API (not the lowercase hid.device() API of the cython hidapi package).
@@ -39,12 +39,16 @@ let
 
   # Fob inventory scanner: loops over fobs and records each one in Freshservice
   # as a "Key Fob" hardware asset (serial number = the embedded PC/SC data).
-  # Per fob: read the keyboard-wedge output (the reader powers up in KBW mode),
-  # switch to CCID and read the embedded Wiegand data with FF CA, decode the
-  # 26-bit H10301 facility code + card number, then USB-reset the reader so it
-  # comes back in KBW mode for the next fob. HID documents no CCID -> KBW
-  # command, so the reset is how we get back (the feature-report switch does
-  # not survive re-enumeration).
+  # Per fob: read the keyboard-wedge output, switch to CCID with the feature
+  # report and read the embedded Wiegand data with FF CA, decode the 26-bit
+  # H10301 facility code + card number, then reboot the reader back into KBW.
+  #
+  # The reader's stored config has KBW off (it powers up in CCID), and HID
+  # documents no CCID -> KBW command. Its built-in web UI, reachable over the
+  # reader's USB Ethernet (EEM) at 192.168.63.99, can: the scanner turns the
+  # stored "Keyboard Wedge Enable" on at start, reboots the reader to get KBW,
+  # and turns it back off on exit. The requests below are the ones the web
+  # UI's webserver.js sends (read back from the reader, not from HID docs).
   #
   # FF CA returns the raw Wiegand bitstream LEFT-justified, so it must be
   # right-aligned before decoding. Verified against a real card: FF CA ->
@@ -59,8 +63,6 @@ let
       flakeIgnore = [ "E501" ];
     } ''
     import base64
-    import fcntl
-    import glob
     import json
     import os
     import select
@@ -75,7 +77,8 @@ let
     from smartcard.System import readers
     from smartcard.util import toHexString
 
-    VID, KBW_PID, CCID_PID = 0x076B, 0x5428, 0x5A27
+    VID, KBW_PID = 0x076B, 0x5428
+    READER_WEB = "http://192.168.63.99/"
     DOMAIN = "lselectric.freshservice.com"
     KEY_FILE = "/persist/secrets/freshservice-api-key"
     LOCK = "${inventoryLock}"
@@ -86,7 +89,6 @@ let
     # Key Fob custom fields, matched by label; add them in Freshservice Admin.
     # Missing ones are skipped (the description always carries everything).
     CUSTOM = ["Facility Code", "Card Number", "Translated Number", "Wiegand Bits", "Keyboard Wedge Output"]
-    USBDEVFS_RESET = 0x5514
 
 
     def decode(b):
@@ -109,14 +111,30 @@ let
             return json.load(r)
 
 
-    def usb_devices(pid):
-        """sysfs dirs of the reader with this product id."""
-        out = []
-        for f in glob.glob("/sys/bus/usb/devices/*/idVendor"):
-            d = os.path.dirname(f)
-            if open(f).read().strip() == "%04x" % VID and open(d + "/idProduct").read().strip().lower() == "%04x" % pid:
-                out.append(d)
-        return out
+    def reader_web(endpoint, body):
+        req = urllib.request.Request(READER_WEB + endpoint, data=body.encode(), headers={"Content-Type": "text/plain"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.read().decode().strip()
+
+
+    def store_kbw(enabled):
+        """Set the stored "Keyboard Wedge Enable" (config unit 04010100) and save it."""
+        reply = reader_web("ajax", "0200000d0404010100010" + ("101" if enabled else "100"))
+        if len(reply) == 6:  # the web UI treats a bare status reply as a failed write
+            raise RuntimeError("reader rejected the Keyboard Wedge Enable write: %s" % reply)
+        if reader_web("cjax", "ff6800010101") != "9000":  # MIB "Apply Changes"
+            raise RuntimeError("reader did not save its config")
+
+
+    def reboot_to_kbw():
+        try:
+            reader_web("cjax", "ff6800010108")  # MIB "Reboot System"
+        except OSError:
+            pass  # the reader can drop the connection as it reboots
+        d = wait_for(kbw_input, 30)
+        if d:
+            d.close()
+        return bool(d)
 
 
     def wait_for(fn, seconds):
@@ -136,24 +154,6 @@ let
                 return d
             d.close()
         return None
-
-
-    def back_to_kbw():
-        """USB-reset the CCID-mode reader so it re-enumerates in KBW mode."""
-        for d in usb_devices(CCID_PID):
-            bus, dev = (int(open(d + "/" + n).read()) for n in ("busnum", "devnum"))
-            with open("/dev/bus/usb/%03d/%03d" % (bus, dev), "wb") as f:
-                fcntl.ioctl(f, USBDEVFS_RESET, 0)
-        if wait_for(kbw_input, 10):
-            return True
-        # Reset alone may not reboot the reader: power-cycle its port instead.
-        for d in usb_devices(CCID_PID):
-            port = d + "/port/disable"
-            if os.path.exists(port):
-                open(port, "w").write("1")
-                time.sleep(1)
-                open(port, "w").write("0")
-        return bool(wait_for(kbw_input, 10))
 
 
     def read_kbw(dev):
@@ -188,12 +188,16 @@ let
             return False
 
 
-    def read_ccid():
-        """Switch KBW -> CCID and read the embedded data with FF CA."""
+    def to_ccid():
         try:
             hid.Device(VID, KBW_PID).send_feature_report(bytes([0x00, 0xA5, 0x5A]))
         except hid.HIDException:
             pass  # re-enumeration mid-request is expected
+
+
+    def read_ccid():
+        """Switch KBW -> CCID and read the embedded data with FF CA."""
+        to_ccid()
         r = wait_for(lambda: [x for x in readers() if "OMNIKEY" in str(x).upper()], 15)
         if not r:
             raise RuntimeError("reader did not come up in CCID mode")
@@ -244,7 +248,7 @@ let
 
 
     if os.geteuid() != 0:
-        sys.exit("Run with sudo: the scanner needs the reader's raw HID/USB devices and the Freshservice API key.")
+        sys.exit("Run with sudo: the scanner needs the reader's raw HID devices and the Freshservice API key.")
     AUTH = "Basic " + base64.b64encode(open(KEY_FILE).read().strip().encode() + b":X").decode()
     fields = {}
     for group in api("GET", "asset_types/%d/fields" % ASSET_TYPE_ID)["asset_type_fields"]:
@@ -254,11 +258,15 @@ let
     if missing:
         print("Key Fob fields missing in Freshservice (description only): %s" % ", ".join(missing), file=sys.stderr)
 
+    try:
+        store_kbw(True)
+    except OSError as e:
+        sys.exit("Cannot reach the reader's web interface at %s (is it plugged in?): %s" % (READER_WEB, e))
     open(LOCK, "w").close()
     seen, last_kbw = set(), None
     try:
-        if usb_devices(CCID_PID) and not back_to_kbw():
-            sys.exit("Reader is stuck in CCID mode: unplug it and plug it back in.")
+        if not kbw_input() and not reboot_to_kbw():
+            sys.exit("Reader did not come up in keyboard mode after a reboot.")
         while True:
             dev = kbw_input()
             if not dev:
@@ -279,12 +287,19 @@ let
                 print("Freshservice error %s: %s" % (e.code, e.read().decode(errors="replace")), file=sys.stderr)
             except Exception as e:  # pcsc/hid/usb hiccups: report and keep scanning
                 print("Scan failed, try that fob again: %s" % e, file=sys.stderr)
-            if not back_to_kbw():
-                sys.exit("Reader did not return to keyboard mode: unplug it and plug it back in, then rerun.")
+            if not reboot_to_kbw():
+                sys.exit("Reader did not return to keyboard mode after a reboot: unplug it and plug it back in, then rerun.")
             print("Remove the fob.")
     except KeyboardInterrupt:
         pass
     finally:
+        # Leave the reader as found: KBW off in its stored config, CCID now.
+        try:
+            store_kbw(False)
+        except (OSError, RuntimeError) as e:
+            print("Could not turn keyboard mode back off; the udev rule will switch it to CCID on next plug-in: %s" % e, file=sys.stderr)
+        if kbw_input():
+            to_ccid()
         os.remove(LOCK)
   '';
 in
