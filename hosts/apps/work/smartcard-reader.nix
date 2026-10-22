@@ -234,7 +234,8 @@ let
         print("keyboard wedge  : %s" % (kbw or "(nothing typed)"))
         print("26-bit Wiegand  : %s %s %s %s  parity %s" % (bits[0], bits[1:9], bits[9:25], bits[25], "ok" if parity_ok else "BAD"))
         print("facility code   : %d" % facility)
-        print("card number     : %s  (translated for Martin %s)" % (card5, translated))
+        print("card number     : %s" % card5)
+        print("martin number   : %s  (%s)" % (translated, "odd facility: +65536, last 5 digits" if facility % 2 else "even facility: same as card number"))
         if not parity_ok:
             print("Parity check failed: not a 26-bit H10301 fob, so nothing was recorded.")
             return
