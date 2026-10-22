@@ -46,9 +46,11 @@ let
   # The reader's stored config has KBW off (it powers up in CCID), and HID
   # documents no CCID -> KBW command. Its built-in web UI, reachable over the
   # reader's USB Ethernet (EEM) at 192.168.63.99, can: the scanner turns the
-  # stored "Keyboard Wedge Enable" on at start, reboots the reader to get KBW,
-  # and turns it back off on exit. The requests below are the ones the web
-  # UI's webserver.js sends (read back from the reader, not from HID docs).
+  # stored "Keyboard Wedge Enable" on and reboots the reader to get KBW, and
+  # turns it back off on exit. The KBW -> CCID feature report also saves KBW
+  # off, so it is turned on again before every reboot. The requests below are
+  # the ones the web UI's webserver.js sends (read back from the reader, not
+  # from HID docs).
   #
   # FF CA returns the raw Wiegand bitstream LEFT-justified, so it must be
   # right-aligned before decoding. Verified against a real card: FF CA ->
@@ -142,6 +144,7 @@ let
 
 
     def reboot_to_kbw():
+        store_kbw(True)  # the feature-report switch to CCID saved KBW off
         try:
             reader_web("cjax", "ff6800010108")  # MIB "Reboot System"
         except OSError:
