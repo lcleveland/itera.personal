@@ -88,18 +88,26 @@ let
     HW = "_33000161308"  # suffix of the fields inherited from Hardware
     # Key Fob custom fields, matched by label; add them in Freshservice Admin.
     # Missing ones are skipped (the description always carries everything).
-    CUSTOM = ["Facility Code", "Card Number", "Translated Number", "Wiegand Bits", "Keyboard Wedge Output"]
+    CUSTOM = ["Facility Code", "Fob Number", "Martin Number", "Wiegand Bits", "CHR Number"]
 
 
     def decode(b):
-        """FF CA bytes -> (bits, facility, card, parity_ok) for 26-bit H10301."""
+        """FF CA bytes -> (bits, facility, card, martin, parity_ok) for 26-bit H10301.
+
+        martin is the code Martin uses: the facility code's lowest bit on top of
+        the 16-bit card number (an odd facility adds 65536), keeping only the
+        last 5 digits, so 40784 + 65536 = 106320 is code 06320.
+        """
         bits = format(int.from_bytes(b, "big") >> (len(b) * 8 - 26), "026b")
         even_ok = bits[0:13].count("1") % 2 == 0  # leading bit: even parity over bits 1-12
         odd_ok = bits[13:26].count("1") % 2 == 1  # trailing bit: odd parity over bits 13-24
-        return bits, int(bits[1:9], 2), int(bits[9:25], 2), even_ok and odd_ok
+        return bits, int(bits[1:9], 2), int(bits[9:25], 2), int(bits[8:25], 2) % 100000, even_ok and odd_ok
 
 
-    assert decode(bytes([0xCD, 0xA8, 0x23, 0x00]))[1:] == (155, 20550, True)
+    assert decode(bytes([0xCD, 0xA8, 0x23, 0x00]))[1:] == (155, 20550, 86086, True)
+    # Martin's examples: card 11713 (facility 155) is code 77249, 40784 is 06320.
+    assert decode(bytes([0x4D, 0x96, 0xE0, 0xC0]))[1:] == (155, 11713, 77249, True)
+    assert decode(bytes([0xCD, 0xCF, 0xA8, 0x40]))[1:] == (155, 40784, 6320, True)
 
 
     def api(method, path, body=None):
@@ -126,15 +134,21 @@ let
             raise RuntimeError("reader did not save its config")
 
 
+    def kbw_present():
+        d = kbw_input()
+        if d:
+            d.close()
+        return bool(d)
+
+
     def reboot_to_kbw():
         try:
             reader_web("cjax", "ff6800010108")  # MIB "Reboot System"
         except OSError:
             pass  # the reader can drop the connection as it reboots
-        d = wait_for(kbw_input, 30)
-        if d:
-            d.close()
-        return bool(d)
+        # A KBW reader is still listed until the reboot takes it off the bus.
+        wait_for(lambda: not kbw_present(), 10)
+        return bool(wait_for(kbw_present, 30))
 
 
     def wait_for(fn, seconds):
@@ -212,18 +226,20 @@ let
 
 
     def record(raw, kbw, seen, fields):
-        bits, facility, card, parity_ok = decode(raw)
+        bits, facility, card, martin, parity_ok = decode(raw)
         serial = raw.hex().upper()
-        # Some systems fold the facility-code parity into the card number: an odd
-        # facility code adds 65536 (the 17th bit) to the card number.
-        translated = card + (65536 if facility % 2 else 0)
+        # Martin expects the leading zeros.
+        card5, translated = "%05d" % card, "%05d" % martin
         print("embedded (FF CA): %s" % toHexString(list(raw)))
         print("keyboard wedge  : %s" % (kbw or "(nothing typed)"))
         print("26-bit Wiegand  : %s %s %s %s  parity %s" % (bits[0], bits[1:9], bits[9:25], bits[25], "ok" if parity_ok else "BAD"))
         print("facility code   : %d" % facility)
-        print("card number     : %d  (translated %d)" % (card, translated))
+        print("card number     : %s  (translated for Martin %s)" % (card5, translated))
         if not parity_ok:
             print("Parity check failed: not a 26-bit H10301 fob, so nothing was recorded.")
+            return
+        if not kbw:
+            print("The reader typed nothing in keyboard mode, and CHR Number is required, so nothing was recorded.")
             return
         if serial in seen:
             print("Already recorded this session.")
@@ -234,13 +250,13 @@ let
             seen.add(serial)
             print("Already in Freshservice: asset #%s (%s)" % (found[0]["display_id"], found[0]["name"]))
             return
-        values = {"Facility Code": facility, "Card Number": card, "Translated Number": translated,
-                  "Wiegand Bits": bits, "Keyboard Wedge Output": kbw}
+        values = {"Facility Code": facility, "Fob Number": card5, "Martin Number": translated,
+                  "Wiegand Bits": bits, "CHR Number": kbw}
         type_fields = {"product" + HW: PRODUCT_ID, "asset_state" + HW: "In Stock", "serial_number" + HW: serial}
         type_fields.update({fields[k]: values[k] for k in CUSTOM if k in fields})
         desc = "\n".join("%s: %s" % (k, values[k]) for k in CUSTOM) + "\nEmbedded data (FF CA): %s" % serial
         a = api("POST", "assets", {
-            "name": "Fob %d-%d" % (facility, card), "asset_tag": "FOB-%d-%d" % (facility, card),
+            "name": "Fob %d-%s" % (facility, card5), "asset_tag": "FOB-%d-%s" % (facility, card5),
             "asset_type_id": ASSET_TYPE_ID, "workspace_id": WORKSPACE_ID,
             "description": desc, "type_fields": type_fields})["asset"]
         seen.add(serial)
@@ -265,7 +281,7 @@ let
     open(LOCK, "w").close()
     seen, last_kbw = set(), None
     try:
-        if not kbw_input() and not reboot_to_kbw():
+        if not kbw_present() and not reboot_to_kbw():
             sys.exit("Reader did not come up in keyboard mode after a reboot.")
         while True:
             dev = kbw_input()
@@ -298,7 +314,7 @@ let
             store_kbw(False)
         except (OSError, RuntimeError) as e:
             print("Could not turn keyboard mode back off; the udev rule will switch it to CCID on next plug-in: %s" % e, file=sys.stderr)
-        if kbw_input():
+        if kbw_present():
             to_ccid()
         os.remove(LOCK)
   '';
@@ -321,6 +337,10 @@ in
     # matches this rule, so the switch is self-limiting/idempotent. Run the USB
     # I/O from a oneshot service rather than directly in RUN+= to avoid udev
     # timeouts.
+    # keyd grabs every keyboard (hosts/common.nix) and would retype the fob
+    # numbers into the focused window; the scanner needs the reader to itself.
+    services.keyd.keyboards.default.ids = [ "-076b:5428" ];
+
     services.udev.extraRules = ''
       ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="076b", ATTR{idProduct}=="5428", TAG+="systemd", ENV{SYSTEMD_WANTS}+="omnikey-ccid-switch.service"
     '';
