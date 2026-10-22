@@ -212,10 +212,17 @@ let
             pass  # re-enumeration mid-request is expected
 
 
+    def ccid_reader():
+        r = [x for x in readers() if "OMNIKEY" in str(x).upper()]
+        if not r and kbw_present():
+            to_ccid()  # the reader sometimes ignores the switch; resend while it is still KBW
+        return r
+
+
     def read_ccid():
         """Switch KBW -> CCID and read the embedded data with FF CA."""
         to_ccid()
-        r = wait_for(lambda: [x for x in readers() if "OMNIKEY" in str(x).upper()], 15)
+        r = wait_for(ccid_reader, 15)
         if not r:
             raise RuntimeError("reader did not come up in CCID mode")
         conn = r[0].createConnection()
