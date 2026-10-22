@@ -33,12 +33,16 @@ let
         pass
   '';
 
-  # While omnikey-read-prox runs it holds this file so the udev auto-switch
-  # below leaves the reader in KBW mode; the scanner switches it itself.
+  # While a fob scanner runs it holds this file so the udev auto-switch below
+  # leaves the reader in KBW mode; the scanner switches it itself.
   inventoryLock = "/run/omnikey-inventory";
 
-  # Fob inventory scanner: loops over fobs and records each one in Freshservice
-  # as a "Key Fob" hardware asset (serial number = the embedded PC/SC data).
+  # Fob scanners, one source built in two modes:
+  #   omnikey-fob-ingest  records each fob in Freshservice as a "Key Fob"
+  #                       hardware asset (serial number = the embedded PC/SC
+  #                       data), skipping serials already there.
+  #   omnikey-fob-lookup  shows what Freshservice holds for each fob and flags
+  #                       stored fields that differ from the scan. Read-only.
   # Per fob: read the keyboard-wedge output, switch to CCID with the feature
   # report and read the embedded Wiegand data with FF CA, decode the 26-bit
   # H10301 facility code + card number, then reboot the reader back into KBW.
@@ -54,17 +58,17 @@ let
   #
   # FF CA returns the raw Wiegand bitstream LEFT-justified, so it must be
   # right-aligned before decoding. Verified against a real card: FF CA ->
-  # CD A8 23 00 -> facility 155, card 20550. That card's keyboard-wedge output
-  # was 0336A08D, which carries the same facility/card but a different final
-  # bit, so both are recorded rather than one derived from the other.
+  # CD A8 23 00 -> facility 155, card 20550, keyboard-wedge output 0336a08c
+  # (the same 26 bits, right-aligned, in hex).
   #
-  # Needs root: hidraw + evdev grab + USB reset, and the API key file.
-  omnikey-read-prox = pkgs.writers.writePython3Bin "omnikey-read-prox"
+  # Needs root: hidraw + evdev grab, and the API key file.
+  fobScanner = mode: pkgs.writers.writePython3Bin "omnikey-fob-${mode}"
     {
       libraries = with pkgs.python3Packages; [ pyscard hid evdev ];
       flakeIgnore = [ "E501" ];
     } ''
     import base64
+    import getpass
     import json
     import os
     import select
@@ -79,6 +83,7 @@ let
     from smartcard.System import readers
     from smartcard.util import toHexString
 
+    MODE = "${mode}"  # ingest | lookup
     VID, KBW_PID = 0x076B, 0x5428
     READER_WEB = "http://192.168.63.99/"
     DOMAIN = "lselectric.freshservice.com"
@@ -235,9 +240,9 @@ let
         return bytes(data)
 
 
-    def record(raw, kbw, seen, fields):
+    def show(raw, kbw):
+        """Print the scan; the Freshservice field values, or None if it is not a 26-bit H10301 fob."""
         bits, facility, card, martin, parity_ok = decode(raw)
-        serial = raw.hex().upper()
         # Martin expects the leading zeros.
         card5, translated = "%05d" % card, "%05d" % martin
         print("embedded (FF CA): %s" % toHexString(list(raw)))
@@ -247,7 +252,21 @@ let
         print("card number     : %s" % card5)
         print("martin number   : %s  (%s)" % (translated, "odd facility: +65536, last 5 digits" if facility % 2 else "even facility: same as card number"))
         if not parity_ok:
-            print("Parity check failed: not a 26-bit H10301 fob, so nothing was recorded.")
+            print("Parity check failed: not a 26-bit H10301 fob.")
+            return None
+        return {"Facility Code": facility, "Fob Number": card5, "Martin Number": translated,
+                "Wiegand Bits": bits, "CHR Number": kbw}
+
+
+    def find(serial):
+        q = urllib.parse.quote("\"serial_number:'%s'\"" % serial)
+        return api("GET", "assets?search=%s" % q).get("assets", [])
+
+
+    def ingest(raw, kbw):
+        values = show(raw, kbw)
+        serial = raw.hex().upper()
+        if values is None:
             return
         if not kbw:
             print("The reader typed nothing in keyboard mode, and CHR Number is required, so nothing was recorded.")
@@ -255,14 +274,12 @@ let
         if serial in seen:
             print("Already recorded this session.")
             return
-        q = urllib.parse.quote("\"serial_number:'%s'\"" % serial)
-        found = api("GET", "assets?search=%s" % q).get("assets", [])
+        found = find(serial)
         if found:
             seen.add(serial)
             print("Already in Freshservice: asset #%s (%s)" % (found[0]["display_id"], found[0]["name"]))
             return
-        values = {"Facility Code": facility, "Fob Number": card5, "Martin Number": translated,
-                  "Wiegand Bits": bits, "CHR Number": kbw}
+        facility, card5 = values["Facility Code"], values["Fob Number"]
         type_fields = {"product" + HW: PRODUCT_ID, "asset_state" + HW: "In Stock", "serial_number" + HW: serial}
         type_fields.update({fields[k]: values[k] for k in CUSTOM if k in fields})
         desc = "\n".join("%s: %s" % (k, values[k]) for k in CUSTOM) + "\nEmbedded data (FF CA): %s" % serial
@@ -274,11 +291,59 @@ let
         print("Recorded as asset #%s (%s)" % (a["display_id"], a["name"]))
 
 
+    def name_of(id_, *kinds):
+        """Display name of a linked record, trying each kind (a user can be a requester or an agent)."""
+        if not id_:
+            return "(none)"
+        for kind in kinds:
+            try:
+                r = api("GET", "%ss/%d" % (kind, id_))[kind]
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    continue
+                raise
+            return r.get("name") or ("%s %s" % (r.get("first_name") or "", r.get("last_name") or "")).strip()
+        return "#%d" % id_
+
+
+    def lookup(raw, kbw):
+        values = show(raw, kbw)
+        found = find(raw.hex().upper())
+        if not found:
+            print("\nNot in Freshservice.")
+            return
+        a = api("GET", "assets/%d?include=type_fields" % found[0]["display_id"])["asset"]
+        tf = a.get("type_fields") or {}
+        print("\nFreshservice asset #%s: %s  (tag %s)" % (a["display_id"], a["name"], a["asset_tag"]))
+        for label, value in [
+                ("state", tf.get("asset_state" + HW)),
+                ("used by", name_of(a.get("user_id"), "requester", "agent")),
+                ("department", name_of(a.get("department_id"), "department")),
+                ("location", name_of(a.get("location_id"), "location")),
+                ("assigned on", a.get("assigned_on") or "(none)"),
+                ("serial", tf.get("serial_number" + HW))]:
+            print("  %-15s: %s" % (label, value))
+        for k in CUSTOM:
+            stored = tf.get(fields[k]) if k in fields else None
+            differs = values is not None and str(stored) != str(values[k])
+            print("  %-15s: %s%s" % (k.lower(), stored, "   <-- scan reads %s" % values[k] if differs else ""))
+
+
     if os.geteuid() != 0:
         sys.exit("Run with sudo: the scanner needs the reader's raw HID devices and the Freshservice API key.")
-    AUTH = "Basic " + base64.b64encode(open(KEY_FILE).read().strip().encode() + b":X").decode()
-    fields = {}
-    for group in api("GET", "asset_types/%d/fields" % ASSET_TYPE_ID)["asset_type_fields"]:
+    # --api-key prompts for a key instead of using the stored one (and so does a
+    # missing key file); prompted, so the key stays out of shell history and ps.
+    if "--api-key" in sys.argv[1:] or not os.path.exists(KEY_FILE):
+        key = getpass.getpass("Freshservice API key: ")
+    else:
+        key = open(KEY_FILE).read()
+    AUTH = "Basic " + base64.b64encode(key.strip().encode() + b":X").decode()
+    seen, fields = set(), {}
+    try:
+        groups = api("GET", "asset_types/%d/fields" % ASSET_TYPE_ID)["asset_type_fields"]
+    except urllib.error.HTTPError as e:
+        sys.exit("Freshservice rejected the API key (HTTP %s)." % e.code if e.code in (401, 403) else "Freshservice error %s: %s" % (e.code, e.read().decode(errors="replace")))
+    for group in groups:
         if group["field_header"] == "Key Fob":
             fields = {f["label"]: f["name"] for f in group["fields"]}
     missing = [k for k in CUSTOM if k not in fields]
@@ -290,7 +355,7 @@ let
     except OSError as e:
         sys.exit("Cannot reach the reader's web interface at %s (is it plugged in?): %s" % (READER_WEB, e))
     open(LOCK, "w").close()
-    seen, last_kbw = set(), None
+    last_kbw = None
     try:
         if not kbw_present() and not reboot_to_kbw():
             sys.exit("Reader did not come up in keyboard mode after a reboot.")
@@ -301,14 +366,14 @@ let
                 dev = wait_for(kbw_input, 3600)
                 if not dev:
                     continue
-            print("\nPresent a fob and leave it on the reader until it is recorded (Ctrl+C to stop).")
+            print("\nPresent a fob and leave it on the reader until it is %s (Ctrl+C to stop)." % ("recorded" if MODE == "ingest" else "shown"))
             try:
                 kbw = read_kbw(dev)
                 if kbw and kbw == last_kbw:
                     # The fob still on the reader re-typed after the reset; skip the mode switch.
                     print("Same fob as last time: remove it and present the next one.")
                     continue
-                record(read_ccid(), kbw, seen, fields)
+                (ingest if MODE == "ingest" else lookup)(read_ccid(), kbw)
                 last_kbw = kbw  # only after a full read, so a failed scan can be retried
             except urllib.error.HTTPError as e:
                 print("Freshservice error %s: %s" % (e.code, e.read().decode(errors="replace")), file=sys.stderr)
@@ -340,7 +405,8 @@ in
       pkgs.pcsc-tools # pcsc_scan: detect the reader and read card UIDs
       pkgs.opensc # opensc-tool / PKCS#11 middleware (general smartcard use)
       omnikey-ccid-switch # manual KBW -> CCID switch
-      omnikey-read-prox # fob inventory scanner -> Freshservice (run with sudo)
+      (fobScanner "ingest") # record fobs in Freshservice (run with sudo)
+      (fobScanner "lookup") # show what Freshservice holds for a fob (run with sudo)
     ];
 
     # Auto-switch the reader to CCID mode whenever it appears in KBW mode
