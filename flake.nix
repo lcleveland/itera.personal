@@ -170,11 +170,11 @@
           # nixos-hardware board via `itera.hardwareModules.<board>` (an
           # import-time choice, not a `config.itera.*` option). `netskope` rides
           # along for the same reason: it is a host-scoped module import (the work
-          # laptops only), which `imports` can't gate on config — as does
-          # `falcon-sensor`, the other work-tenant agent, `netbox-mcp` and
-          # `microsoft-directory-mcp` (work network only), and `freetoken`, which is
-          # dream-only for the mirror-image reason (it needs the NVIDIA GPU that
-          # only dream has).
+          # laptops only, through hosts/work.nix), which `imports` can't gate on
+          # config — as does `falcon-sensor`, the other work-tenant agent,
+          # `netbox-mcp` and `microsoft-directory-mcp` (work network only, also
+          # through work.nix), and `freetoken`, which is dream-only for the
+          # mirror-image reason (it needs the NVIDIA GPU that only dream has).
           specialArgs = { inherit itera netskope netbox-mcp microsoft-directory-mcp falcon-sensor freetoken; };
           modules = [
             itera.nixosModules.default
