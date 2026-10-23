@@ -1,7 +1,7 @@
 # x1yoga — Lenovo ThinkPad X1 Yoga Gen 8 work laptop (hostname CHANGE-ME).
 #
-# Same ROLE as `framework` (the work tenant: Netskope, Falcon, smartcard reader,
-# FDE + TPM2, Colemak-DH, printing, fingerprint), different HARDWARE: a 13th-gen
+# Same ROLE as `framework` (the work tenant: Netskope, Falcon, FDE + TPM2,
+# Colemak-DH, printing, fingerprint), different HARDWARE: a 13th-gen
 # Intel convertible instead of the AMD Framework 16. The work-tenant role is
 # shared through ./work.nix rather than duplicated — nothing in it is specific
 # to a laptop model, only to the tenant.
@@ -24,9 +24,7 @@
   # touchscreen themselves are plain evdev/libinput and need nothing here.
   imports = [
     itera.hardwareModules.lenovo-thinkpad-x1-yoga-8th-gen
-    # Work-tenant apps, shared with `framework` — see the note at the top.
-    ./apps/work/smartcard-reader.nix
-    # Work-tenant role (see the note at the top).
+    # Work-tenant role, shared with `framework` — see the note at the top.
     ./work.nix
   ];
 

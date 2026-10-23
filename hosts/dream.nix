@@ -43,9 +43,6 @@ in
     ./apps/dream/exiled-exchange-2.nix
     ./apps/dream/freetoken.nix
     ./apps/dream/stability-matrix.nix
-    # OMNIKEY reader + fob inventory scanner (omnikey-read-prox), shared with
-    # the work laptops.
-    ./apps/work/smartcard-reader.nix
     ./apps/dream/orca-slicer.nix
     ./apps/dream/pob.nix
     ./apps/dream/python.nix

@@ -3,8 +3,12 @@
 # single user.
 { config, inputs, lib, ... }:
 {
-  # Apps shared by both hosts, migrated from the old eiros.users.{personal,work}
-  # repos. One module per app under ./apps/common.
+  # Apps shared by every host, migrated from the old eiros.users.{personal,work}
+  # repos. One module per app under ./apps/common. Folder rule: a file under
+  # hosts/apps/<x>/ is imported only by hosts/<x>.nix (common.nix for common,
+  # work.nix for work). Only the import keeps work software off dream, and a stray
+  # one evaluates silently, so check that this prints only hosts/work.nix:
+  #   grep -rlE '^\s*\.(/hosts)?/apps/work/' hosts/ flake.nix
   imports = [
     ./apps/common/teams.nix
     ./apps/common/zoom.nix
@@ -19,6 +23,8 @@
     ./apps/common/falcon-mcp.nix
     ./apps/common/sshpass.nix
     inputs.ninjarmm-ncplayer.nixosModules.default
+    # OMNIKEY reader + fob inventory scanner (omnikey-fob).
+    ./apps/common/smartcard-reader.nix
   ];
 
   # Every enabled `services.*-mcp` binds a loopback port (`port`, or the tail of

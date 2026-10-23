@@ -6,12 +6,9 @@
   # can't toggle from config, so it goes in `imports` rather than `itera.*`.
   imports = [
     itera.hardwareModules.framework-16-7040-amd
-    # Work-tenant apps, migrated from the old eiros.users.work repo. They live
-    # under apps/work/ (not apps/framework/) because none of them is specific to
-    # this laptop model — x1yoga imports the same files.
-    ./apps/work/smartcard-reader.nix
     # Work-tenant role: Netskope, Falcon, the work-network MCP servers, FDE +
-    # TPM2 and printing, shared with x1yoga.
+    # TPM2 and printing, shared with x1yoga. Its apps live under apps/work/ (not
+    # apps/framework/) because none of them is specific to this laptop model.
     ./work.nix
   ];
 

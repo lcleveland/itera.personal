@@ -12,9 +12,9 @@ mango/DankMaterialShell desktop).
 | `framework` | `LS-04380`  | Framework 16 (7040 AMD)          | work tenant, FDE + TPM2, fingerprint, printing, Colemak-DH, three monitors |
 | `x1yoga`    | `CHANGE-ME` | ThinkPad X1 Yoga Gen 8 (Intel)   | work tenant, FDE + TPM2, fingerprint, printing, Colemak-DH, convertible (auto-rotate) |
 
-The two work laptops share the corporate agents (Netskope, CrowdStrike Falcon,
-OMNIKEY smartcard reader) from [hosts/apps/work/](hosts/apps/work) — those
-modules are work-*tenant* specific, not laptop-model specific.
+The two work laptops share the corporate agents (Netskope, CrowdStrike Falcon)
+from [hosts/apps/work/](hosts/apps/work) — those modules are work-*tenant*
+specific, not laptop-model specific.
 
 Both use itera's declarative disk layout (`disko`) with a tmpfs root
 (`impermanence`) — **installing wipes the target disk.** The target disk is
