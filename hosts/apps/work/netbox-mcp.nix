@@ -1,13 +1,12 @@
 # netbox-mcp — an MCP server over the NetBox REST API (IPAM/DCIM), so Claude Code
 # can read and edit the work NetBox at netbox.lselectric.local. Work-tenant
 # hosts only (framework, x1yoga): that NetBox is only reachable on the work
-# network, so the flake module comes in through specialArgs (see flake.nix)
-# rather than the every-host `modules` list netskope-mcp uses.
+# network, so this file is imported only through work.nix's apps.
 #
 # The packaging + module live in github:lcleveland/netbox-mcp.
-{ netbox-mcp, ... }:
+{ inputs, ... }:
 {
-  imports = [ netbox-mcp.nixosModules.default ];
+  imports = [ inputs.netbox-mcp.nixosModules.default ];
 
   # Loopback HTTP, same shape as netskope-mcp (apps/common/netskope-mcp.nix), but
   # on 8232: 8231 is BOTH servers' default and netskope-mcp already holds it.

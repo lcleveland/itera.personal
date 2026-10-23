@@ -4,8 +4,11 @@
 # API client that needs nothing but credentials and network.
 #
 # The packaging + module live in github:lcleveland/ninjaone-mcp.
+{ inputs, ... }:
 {
-  # Loopback HTTP on the default 127.0.0.1:8233/mcp (netskope 8231, netbox 8232).
+  imports = [ inputs.ninjaone-mcp.nixosModules.default ];
+
+  # Loopback HTTP on the default 127.0.0.1:8233/mcp.
   # Register once per host:
   #
   #   claude mcp add --scope user --transport http ninjaone http://127.0.0.1:8233/mcp

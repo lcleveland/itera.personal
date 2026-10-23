@@ -5,9 +5,11 @@
 # apps/work/falcon-sensor.nix despite the name — that is the endpoint agent.
 #
 # The packaging + module live in github:lcleveland/falcon-mcp.
+{ inputs, ... }:
 {
-  # Loopback HTTP on the default 127.0.0.1:8235/mcp (netskope 8231, netbox 8232,
-  # ninjaone 8233, freshservice 8234). Register once per host:
+  imports = [ inputs.falcon-mcp.nixosModules.default ];
+
+  # Loopback HTTP on the default 127.0.0.1:8235/mcp. Register once per host:
   #
   #   claude mcp add --scope user --transport http falcon http://127.0.0.1:8235/mcp
   services.falcon-mcp = {

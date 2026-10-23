@@ -1,9 +1,8 @@
 # CrowdStrike Falcon sensor — the corporate EDR agent. Work-tenant hosts only
 # (framework, x1yoga): like netskope this is work-tenant infrastructure, not
-# anything model-specific, so the file is imported from those host files rather
-# than hosts/common.nix — and is shared from apps/work/ rather than duplicated —
-# while the flake module comes in through specialArgs (see flake.nix) instead of
-# the every-host `modules` list.
+# anything model-specific, so the file is imported only through work.nix's apps
+# rather than hosts/common.nix — and is shared from apps/work/ rather than
+# duplicated — and it imports the flake module itself, so no other host gets it.
 #
 # The module + fetch tool live in github:lcleveland/falcon-sensor. Two
 # NixOS-specific problems it exists to solve, both of which shape this file:
@@ -32,12 +31,12 @@
 # not just the API half the live run covered — is now exercised outside the VM
 # test's stub.
 {
-  falcon-sensor,
+  inputs,
   config,
   ...
 }:
 {
-  imports = [ falcon-sensor.nixosModules.default ];
+  imports = [ inputs.falcon-sensor.nixosModules.default ];
 
   services.falcon-sensor = {
     enable = true;

@@ -1,16 +1,15 @@
 # microsoft-directory-mcp — an MCP server over the on-prem Active Directory forest
 # (LDAPS) and the Entra ID tenant (Graph), so Claude Code can read and edit users,
 # groups, devices and policy on both sides. Work-tenant hosts only (framework,
-# x1yoga): the domain controllers are only reachable on the work network, so the
-# flake module comes in through specialArgs (see flake.nix), same as netbox-mcp.
+# x1yoga): the domain controllers are only reachable on the work network, so this
+# file is imported only through work.nix's apps, same as netbox-mcp.
 #
 # The packaging + module live in github:lcleveland/microsoft-directory-mcp.
-{ microsoft-directory-mcp, ... }:
+{ inputs, ... }:
 {
-  imports = [ microsoft-directory-mcp.nixosModules.default ];
+  imports = [ inputs.microsoft-directory-mcp.nixosModules.default ];
 
-  # Loopback HTTP on 8236: the default 8235 is falcon-mcp's (netskope 8231,
-  # netbox 8232, ninjaone 8233, freshservice 8234). Register once per host:
+  # Loopback HTTP on 8236: the default 8235 is falcon-mcp's. Register once per host:
   #
   #   claude mcp add --scope user --transport http directory http://127.0.0.1:8236/mcp
   #

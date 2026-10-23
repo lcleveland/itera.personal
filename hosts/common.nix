@@ -1,7 +1,7 @@
 # Settings shared by every host. itera's opinionated defaults are already on
 # (opt-out via mkDefault); this file only sets what deviates from them plus the
 # single user.
-{ lib, ... }:
+{ config, inputs, lib, ... }:
 {
   # Apps shared by both hosts, migrated from the old eiros.users.{personal,work}
   # repos. One module per app under ./apps/common.
@@ -18,7 +18,23 @@
     ./apps/common/freshservice-mcp.nix
     ./apps/common/falcon-mcp.nix
     ./apps/common/sshpass.nix
+    inputs.ninjarmm-ncplayer.nixosModules.default
   ];
+
+  # Every enabled `services.*-mcp` binds a loopback port (`port`, or the tail of
+  # `http.addr`). Two on one port is a silent runtime failure, so fail eval instead.
+  assertions =
+    let
+      ports = lib.mapAttrs (_: s: toString (s.port or (lib.last (lib.splitString ":" s.http.addr)))) (
+        lib.filterAttrs (n: s: lib.hasSuffix "-mcp" n && s.enable or false) config.services
+      );
+    in
+    [
+      {
+        assertion = lib.allUnique (lib.attrValues ports);
+        message = "MCP loopback ports clash: ${builtins.toJSON ports}";
+      }
+    ];
 
   # Claude Code, both ways — all from itera's `itera.ai.claude.enable` battery
   # (set below), so nothing is installed by hand here:
@@ -55,7 +71,7 @@
 
   # NinjaOne remote session player: installs `ncplayer` (FHS-wrapped RPM) and
   # registers it as the ninjarmm:// URL handler. Module comes from the
-  # ninjarmm-ncplayer flake input, imported for every host in flake.nix.
+  # ninjarmm-ncplayer flake input, imported above for every host.
   programs.ninjarmm-ncplayer.enable = true;
 
   # Workaround: ncplayer leaves Shift stuck when right Shift is used, so remap

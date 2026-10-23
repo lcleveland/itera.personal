@@ -7,13 +7,15 @@
 # despite the name: that one is the *endpoint agent* that steers this machine's
 # traffic and is only meaningful on a work laptop, this is an API *client* that
 # needs nothing but a token and network. Being able to ask about the tenant from
-# dream is the point, so the module is imported for all hosts in flake.nix
-# (alongside ninjarmm-ncplayer) rather than through specialArgs.
+# dream is the point, so this file is imported for all hosts from common.nix.
 #
 # The packaging + module live in github:lcleveland/netskope-mcp. Built from Go
 # source, MIT: the first from-source build in this set of flakes, so `go.mod`
 # changes need a `vendorHash` refresh upstream, not here.
+{ inputs, ... }:
 {
+  imports = [ inputs.netskope-mcp.nixosModules.default ];
+
   # Loopback HTTP on the default 127.0.0.1:8231/mcp, which is what makes this a
   # one-line client config on every host instead of a per-client command + args.
   # No bearerTokenFile and no openFirewall deliberately: nothing off this machine

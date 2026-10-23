@@ -7,7 +7,7 @@
 # and turns itera.nvidia on by itself, so nothing here has to ask for the
 # driver). framework has no NVIDIA and explicitly leaves itera.nvidia off, which
 # is why this module is imported from hosts/dream.nix instead of common.nix, and
-# why the flake input rides in through specialArgs (same pattern as netskope).
+# why only this file imports the flake module (same pattern as netskope).
 #
 # The packaging + module live in github:lcleveland/freetoken: the `ft` CLI built
 # from source against nixpkgs' torch/CUDA and wrapped with the CUDA toolchain it
@@ -15,20 +15,20 @@
 # with a real launcher entry.
 {
   config,
-  freetoken,
+  inputs,
   ...
 }:
 {
   # The GUI alone. `nixosModules.desktop` stands on its own — it does not import
   # the server module, and supplies both its own package and the `ft` engine it
   # drives from the flake's CUDA-enabled build. Switch this to
-  # `freetoken.nixosModules.default` if the headless server is ever wanted too;
+  # `inputs.freetoken.nixosModules.default` if the headless server is ever wanted too;
   # that adds `services.freetoken.*` and nothing else.
   #
   # No overlay and no `nixpkgs.config.cudaSupport` here: the flake builds its own
   # CUDA-enabled instance of OUR nixpkgs (we `follows` it), so nothing else on
   # this system is rebuilt with CUDA.
-  imports = [ freetoken.nixosModules.desktop ];
+  imports = [ inputs.freetoken.nixosModules.desktop ];
 
   programs.freetoken-desktop.enable = true;
 

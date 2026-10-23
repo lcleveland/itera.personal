@@ -1,8 +1,8 @@
 # Netskope Client for Linux — the corporate SASE/SSE endpoint agent (steers this
 # machine's traffic through the lselectric tenant). Work-tenant hosts only
 # (framework, x1yoga): the tenant is work infrastructure, so this file is imported
-# from those host files rather than hosts/common.nix, and the flake module comes in
-# through specialArgs (see flake.nix) instead of the every-host `modules` list.
+# only through work.nix's apps rather than hosts/common.nix, and it imports the
+# flake module itself, so no other host gets it.
 # Nothing below is laptop-model-specific — it is tenant-specific — which is why
 # this lives under apps/work/ and is shared rather than duplicated per host.
 #
@@ -20,13 +20,13 @@
 # The module now bind-mounts a rehashed trust dir over /etc/ssl/certs for its own
 # units. SSL_CERT_DIR / SSL_CERT_FILE / CURL_CA_BUNDLE do not help.
 {
-  netskope,
+  inputs,
   config,
   pkgs,
   ...
 }:
 {
-  imports = [ netskope.nixosModules.default ];
+  imports = [ inputs.netskope.nixosModules.default ];
 
   # (The `services.netskope.package` workaround that used to sit here is gone: it
   # pinned `src = null` so that callPackage couldn't auto-fill the packaging

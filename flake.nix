@@ -31,12 +31,11 @@
     # UI. A flake exposing nixosModules.default (option: services.netskope-mcp.*) and
     # the Go binary built from source — MIT, nothing unfree, no vendor blob.
     #
-    # Unlike the `netskope` input below this IS imported for every host (the `modules`
-    # list further down) rather than through specialArgs: it is a *client* of the
-    # tenant API, not a tenant endpoint agent — nothing in it is laptop- or
-    # model-specific, it hooks nothing in the kernel, and the only thing the host it
-    # runs on needs is the token. Enabled in hosts/apps/common/netskope-mcp.nix.
-    # Share nixpkgs.
+    # Unlike the `netskope` input below this IS imported for every host (by
+    # hosts/apps/common/netskope-mcp.nix, which common.nix imports): it is a
+    # *client* of the tenant API, not a tenant endpoint agent — nothing in it is
+    # laptop- or model-specific, it hooks nothing in the kernel, and the only thing
+    # the host it runs on needs is the token. Share nixpkgs.
     netskope-mcp = {
       url = "github:lcleveland/netskope-mcp";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -71,8 +70,8 @@
 
     # netbox-mcp — an MCP server over the NetBox REST API (IPAM/DCIM). Same shape
     # as netskope-mcp (Go, MIT, nixosModules.default -> services.netbox-mcp.*), but
-    # work-laptops-only: the NetBox it talks to is only on the work network, so it
-    # comes in through specialArgs and is imported by hosts/apps/work/netbox-mcp.nix.
+    # work-laptops-only: the NetBox it talks to is only on the work network, so
+    # it is imported by hosts/apps/work/netbox-mcp.nix, one of work.nix's apps.
     # Share nixpkgs.
     netbox-mcp = {
       url = "github:lcleveland/netbox-mcp";
@@ -82,8 +81,8 @@
     # microsoft-directory-mcp — an MCP server over on-prem Active Directory (LDAPS)
     # and Entra ID (Graph). Same shape as netbox-mcp (Go, nixosModules.default ->
     # services.microsoft-directory-mcp.*) and work-laptops-only for the same
-    # reason: the AD domain controllers are only on the work network. Comes in
-    # through specialArgs, imported by hosts/apps/work/microsoft-directory-mcp.nix.
+    # reason: the AD domain controllers are only on the work network. Imported by
+    # hosts/apps/work/microsoft-directory-mcp.nix, one of work.nix's apps.
     # Share nixpkgs.
     microsoft-directory-mcp = {
       url = "github:lcleveland/microsoft-directory-mcp";
@@ -94,8 +93,8 @@
     # A flake exposing nixosModules.default (option: services.netskope.*) plus the
     # unfree, tenant-specific NSClient.run packaging. Unlike ninjarmm-ncplayer this
     # is NOT imported for every host — the tenant is work-only, so the module is
-    # imported by hosts/apps/work/netskope.nix (shared by the work laptops
-    # `framework` and `x1yoga`) via specialArgs. Share nixpkgs.
+    # imported only by hosts/apps/work/netskope.nix, one of work.nix's apps (the
+    # work laptops `framework` and `x1yoga`). Share nixpkgs.
     netskope = {
       url = "github:lcleveland/netskope-client";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -104,9 +103,8 @@
     # CrowdStrike Falcon sensor — the corporate EDR agent. A flake exposing
     # nixosModules.default (option: services.falcon-sensor.*) plus the unfree,
     # non-redistributable .deb packaging. Work-laptops-only for the same reason as
-    # netskope (it is the work tenant's agent), so it comes in through
-    # specialArgs rather than the every-host `modules` list, and is imported by
-    # hosts/apps/work/falcon-sensor.nix. Share nixpkgs.
+    # netskope (it is the work tenant's agent), so it is imported only by
+    # hosts/apps/work/falcon-sensor.nix, one of work.nix's apps. Share nixpkgs.
     #
     # The installer sits behind an authenticated CrowdStrike API and can never be
     # fetched during a build, so the sensor is NOT packaged: this host downloads
@@ -132,8 +130,7 @@
     # (services.freetoken.* + programs.freetoken-desktop.*) and
     # nixosModules.desktop (the GUI alone, which is what dream takes). CUDA-only,
     # so like netskope this is NOT imported for every host: it is dream-only (the
-    # NVIDIA box) and comes in via specialArgs, through
-    # hosts/apps/dream/freetoken.nix.
+    # NVIDIA box), imported only by hosts/apps/dream/freetoken.nix.
     #
     # Following our nixpkgs is free here, not just tidy: the CUDA torch this
     # resolves to is the same derivation under our rev and the one this flake
@@ -157,7 +154,7 @@
   };
 
   outputs =
-    { nixpkgs, itera, ninjarmm-ncplayer, netskope, netskope-mcp, ninjaone-mcp, freshservice-mcp, falcon-mcp, netbox-mcp, microsoft-directory-mcp, falcon-sensor, freetoken, ... }:
+    { nixpkgs, itera, ... }@inputs:
     let
       # A single import (itera.nixosModules.default) pulls in hjem and wires
       # itera's whole opinionated layer: disko + tmpfs-root impermanence, agenix,
@@ -166,23 +163,14 @@
         hostModule:
         nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
-          # Expose the itera flake to host modules so they can select a
-          # nixos-hardware board via `itera.hardwareModules.<board>` (an
-          # import-time choice, not a `config.itera.*` option). `netskope` rides
-          # along for the same reason: it is a host-scoped module import (the work
-          # laptops only, through hosts/work.nix), which `imports` can't gate on
-          # config — as does `falcon-sensor`, the other work-tenant agent,
-          # `netbox-mcp` and `microsoft-directory-mcp` (work network only, also
-          # through work.nix), and `freetoken`, which is dream-only for the
-          # mirror-image reason (it needs the NVIDIA GPU that only dream has).
-          specialArgs = { inherit itera netskope netbox-mcp microsoft-directory-mcp falcon-sensor freetoken; };
+          # Expose every flake input to modules as `inputs`: each app file imports
+          # its own `inputs.<name>.nixosModules.*`, so a host gets a flake module
+          # only by importing that app (`imports` can't gate on config). `itera`
+          # stays a direct arg for `itera.hardwareModules.<board>`. Inputs are not
+          # spread into the args, so a future input can't shadow `pkgs`/`lib`.
+          specialArgs = { inherit inputs itera; };
           modules = [
             itera.nixosModules.default
-            ninjarmm-ncplayer.nixosModules.default
-            netskope-mcp.nixosModules.default
-            ninjaone-mcp.nixosModules.default
-            freshservice-mcp.nixosModules.default
-            falcon-mcp.nixosModules.default
             { nixpkgs.overlays = [ itera.overlays.default ]; }
             ./hosts/common.nix
             hostModule

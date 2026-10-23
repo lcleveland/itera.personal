@@ -4,9 +4,11 @@
 # cloud API client that needs nothing but credentials and network.
 #
 # The packaging + module live in github:lcleveland/freshservice-mcp.
+{ inputs, ... }:
 {
-  # Loopback HTTP on the default 127.0.0.1:8234/mcp (netskope 8231, netbox 8232,
-  # ninjaone 8233). Register once per host:
+  imports = [ inputs.freshservice-mcp.nixosModules.default ];
+
+  # Loopback HTTP on the default 127.0.0.1:8234/mcp. Register once per host:
   #
   #   claude mcp add --scope user --transport http freshservice http://127.0.0.1:8234/mcp
   services.freshservice-mcp = {
