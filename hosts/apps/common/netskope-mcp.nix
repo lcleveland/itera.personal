@@ -75,6 +75,6 @@
     # overrides and UBA watchlists are unlicensed too, but share groups with
     # tools that work, so they stay registered and 403.
     # `ips` changes threat blocking tenant-wide; the token's role is the gate.
-    toolGroups = [ "core" "npa" "policy" "events" "scim" "reporting" "steering" "incidents" "devices" "ips" ];
+    toolGroups = [ "core" "npa" "policy" "events" "scim" "reporting" "steering" "incidents" "devices" "ips" "intel" ];
   };
 }
