@@ -1,7 +1,7 @@
 # Netskope Client for Linux — the corporate SASE/SSE endpoint agent (steers this
 # machine's traffic through the lselectric tenant). Work-tenant hosts only
-# (framework, x1yoga), plus dream with autoStart forced off: the tenant is work
-# infrastructure, so this file is imported only by work.nix and dream.nix rather
+# (framework, x1yoga), plus dream: the tenant is work infrastructure, so this
+# file is imported only by work.nix and dream.nix rather
 # than hosts/common.nix, and it imports the flake module itself.
 # Nothing below is laptop-model-specific — it is tenant-specific — which is why
 # this lives under apps/work/ and is shared rather than duplicated per host.
@@ -68,10 +68,10 @@
     enableTray = true;
 
     # The bar shows our own DankMaterialShell widget instead of Netskope's icon: the
-    # same status and menu actions, plus an on/off switch for the daemon (see the
-    # registration below). `trayIcon` (Netskope's own icon) defaults to the opposite
-    # of this, so it is off; set `trayIcon = true;` to get it back alongside.
+    # same status and menu actions, plus steering and daemon on/off switches (see the
+    # registration below). Both are opt-in/opt-out upstream, so set them explicitly.
     dmsWidget.enable = true;
+    trayIcon = false;
 
     # Do NOT start the daemon at boot. Steering works as of upstream #18, and that is
     # exactly the problem: the moment the client's tunnel connects it takes over all

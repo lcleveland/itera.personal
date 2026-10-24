@@ -94,7 +94,7 @@
     # unfree, tenant-specific NSClient.run packaging. Unlike ninjarmm-ncplayer this
     # is NOT imported for every host — the tenant is work-only, so the module is
     # imported only by hosts/apps/work/netskope.nix, one of work.nix's apps (the
-    # work laptops `framework` and `x1yoga`), and by dream (autoStart off). Share nixpkgs.
+    # work laptops `framework` and `x1yoga`), and by dream. Share nixpkgs.
     netskope = {
       url = "github:lcleveland/netskope-client";
       inputs.nixpkgs.follows = "nixpkgs";
