@@ -1,8 +1,8 @@
 # Netskope Client for Linux — the corporate SASE/SSE endpoint agent (steers this
 # machine's traffic through the lselectric tenant). Work-tenant hosts only
-# (framework, x1yoga): the tenant is work infrastructure, so this file is imported
-# only through work.nix's apps rather than hosts/common.nix, and it imports the
-# flake module itself, so no other host gets it.
+# (framework, x1yoga), plus dream with autoStart forced off: the tenant is work
+# infrastructure, so this file is imported only by work.nix and dream.nix rather
+# than hosts/common.nix, and it imports the flake module itself.
 # Nothing below is laptop-model-specific — it is tenant-specific — which is why
 # this lives under apps/work/ and is shared rather than duplicated per host.
 #
@@ -22,6 +22,7 @@
 {
   inputs,
   config,
+  lib,
   pkgs,
   ...
 }:
@@ -62,11 +63,15 @@
     # stagentapp (the watchdog / session IPC broker) and stagentui (the GTK tray icon
     # itself). Upstream used to run only the watchdog and left starting the icon to
     # XDG autostart or a hard-coded /usr/bin/gtk-launch, neither of which exists here,
-    # so nothing ever drew it; the icon now has its own unit. This is a desktop host
-    # and the tray is the only place the client surfaces its enrollment / steering
-    # status, so keep it — it costs a GTK+WebKit closure. DankMaterialShell provides
-    # the StatusNotifier host it registers against.
+    # so nothing ever drew it; the icon now has its own unit. Keep enableTray for
+    # stagentapp, the session agent.
     enableTray = true;
+
+    # The bar shows our own DankMaterialShell widget instead of Netskope's icon: the
+    # same status and menu actions, plus an on/off switch for the daemon (see the
+    # registration below). `trayIcon` (Netskope's own icon) defaults to the opposite
+    # of this, so it is off; set `trayIcon = true;` to get it back alongside.
+    dmsWidget.enable = true;
 
     # Do NOT start the daemon at boot. Steering works as of upstream #18, and that is
     # exactly the problem: the moment the client's tunnel connects it takes over all
@@ -92,17 +97,10 @@
     # US-ORD2, "Enable NS packet filter for web mode" on ports 80/443, packet steering
     # started, and DNS, TCP and plain HTTPS all up throughout with no dead rounds.
     #
-    # If it ever misbehaves again, note that stopping this daemon is not as simple as
-    # it looks. `systemctl stop` alone does not do it -- its shutdown path does network
-    # work that hangs precisely when the network is down, and it sat there for 30s
-    # still holding its routing. `kill -s KILL` alone does not either, because the unit
-    # is Restart=always and systemd brings it straight back. It is:
-    #
-    #   systemctl stop --no-block stagentd && systemctl kill -s KILL stagentd
-    #
-    # and then undoing the routing by hand, since a killed client cleans up nothing:
-    # `ip rule del fwmark 0x5 table 9`, `ip route flush table 9`, `ip link del sta0`.
-    # ~/Documents/netskope-client/tools/steering-test.sh does all of that on a timer.
+    # If it ever misbehaves again, turn it off with the bar widget's daemon switch or
+    # `systemctl stop stagentd`. Upstream now kills a hung shutdown after 10s and
+    # clears the steering routes (ip rule/route table 9, sta0) itself, so that one
+    # command is the whole recovery.
     autoStart = true;
 
     # SSL-inspection CA. Netskope MITMs TLS, so once steering is live anything that
@@ -203,6 +201,49 @@
   # reaches the state through this path. The per-user stAgentUI/stAgentCli read
   # data/nsusercert.p12 via /opt/netskope/stagent/data, so they never traverse
   # statePath itself, and netskope-setup sets app/, data/ and logs/ to 0755 inside.
+  # Register the widget with DMS. Enabling a plugin does not put it on a bar, and
+  # itera's bar list is one mkDefault value with no way to append to it, so this is
+  # a copy of itera's default bar (modules/nixos/desktop/dankmaterialshell.nix) with
+  # `netskope` added next to the system tray. Re-copy it when itera's bar changes.
+  itera.programs.dankMaterialShell = lib.mkIf config.services.netskope.dmsWidget.enable {
+    plugins.netskope.src = config.services.netskope.dmsWidget.package;
+    settings.barConfigs = [
+      {
+        id = "default";
+        name = "Main Bar";
+        enabled = true;
+        position = 0;
+        screenPreferences = [ "all" ];
+        showOnLastDisplay = true;
+        leftWidgets = [
+          "launcherButton"
+          "workspaceSwitcher"
+          "layout"
+          "focusedWindow"
+        ];
+        centerWidgets = [
+          "music"
+          "clock"
+          "weather"
+        ];
+        rightWidgets = [
+          "systemTray"
+          "netskope"
+          "privacyIndicator"
+          "idleInhibitor"
+          "clipboard"
+          "cpuUsage"
+          "memUsage"
+          "ipIndicator"
+          "iteraUpdate"
+          "notificationButton"
+          "battery"
+          "controlCenterButton"
+        ];
+      }
+    ];
+  };
+
   itera.impermanence.directories = [
     {
       # Tracks the module's own option so the two can't drift apart.
