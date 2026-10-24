@@ -1,5 +1,6 @@
 # dream — AMD desktop (eiros hostname DREAM).
 {
+  lib,
   pkgs,
   ...
 }:
@@ -47,10 +48,12 @@ in
     ./apps/dream/pob.nix
     ./apps/dream/python.nix
     ./apps/dream/vesktop.nix
-    # Work Netskope client. The daemon starts at boot; turn it or steering off from
-    # the bar widget.
+    # Work Netskope client, enrolled but dormant at boot: the tenant turns steering
+    # on as soon as the daemon runs, so start it from the bar widget when wanted.
     ./apps/work/netskope.nix
   ];
+
+  services.netskope.autoStart = lib.mkForce false;
 
   itera = {
     networking.hostName = "DREAM";
