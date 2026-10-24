@@ -1,4 +1,4 @@
-# OBS Studio (screen recording + streaming), shared by both hosts.
+# OBS Studio (screen recording + streaming), shared by every host.
 #
 # Uses the NixOS program module rather than a bare package (like zoom.nix) so we
 # get the wrapped OBS — `programs.obs-studio.plugins` builds a wrapper with the

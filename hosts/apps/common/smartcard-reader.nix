@@ -1,6 +1,5 @@
 {
   config,
-  lib,
   pkgs,
   ...
 }:
@@ -29,7 +28,7 @@ let
     try:
         d.send_feature_report(bytes([0x00, 0xA5, 0x5A]))  # KBW -> CCID
     except hid.HIDException:
-        # The device re-enumerates as 076b:5A27; an I/O error here is expected.
+        # The device re-enumerates as 076b:5427; an I/O error here is expected.
         pass
   '';
 
@@ -65,15 +64,15 @@ in
       omnikey-fob # `ingest` records fobs in Freshservice, `lookup` shows them (run with sudo)
     ];
 
-    # Auto-switch the reader to CCID mode whenever it appears in KBW mode
-    # (product id 5428). Once switched it enumerates as 5A27 and no longer
-    # matches this rule, so the switch is self-limiting/idempotent. Run the USB
-    # I/O from a oneshot service rather than directly in RUN+= to avoid udev
-    # timeouts.
     # keyd grabs every keyboard (hosts/common.nix) and would retype the fob
     # numbers into the focused window; the scanner needs the reader to itself.
     services.keyd.keyboards.default.ids = [ "-076b:5428" ];
 
+    # Auto-switch the reader to CCID mode whenever it appears in KBW mode
+    # (product id 5428). Once switched it enumerates as 5427 and no longer
+    # matches this rule, so the switch is self-limiting/idempotent. Run the USB
+    # I/O from a oneshot service rather than directly in RUN+= to avoid udev
+    # timeouts.
     services.udev.extraRules = ''
       ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="076b", ATTR{idProduct}=="5428", TAG+="systemd", ENV{SYSTEMD_WANTS}+="omnikey-ccid-switch.service"
     '';
