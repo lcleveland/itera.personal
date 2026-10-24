@@ -35,5 +35,8 @@
     allowApprovals = true;
     allowOps = true;
     allowCustomObjects = true;
+    # Reversible deletes (ticket trash, user deactivate) and agent/group admin.
+    allowSoftDelete = true;
+    allowAdmin = true;
   };
 }
