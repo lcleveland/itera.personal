@@ -16,22 +16,6 @@
 # settings) survives a reboot on its own.
 { pkgs, ... }:
 {
-  # ponytail: v4l2loopback 0.15.4 on kernel 7.3 lets the kernel's modules_install
-  # run depmod, so its output ships modules.alias & co. and linux-modules' buildEnv
-  # fails on the conflict. DEPMOD=true is the fix from NixOS/nixpkgs#575861; drop
-  # this overlay once that PR reaches our nixpkgs.
-  nixpkgs.overlays = [
-    (_: prev: {
-      linuxPackages_latest = prev.linuxPackages_latest.extend (
-        _: lp: {
-          v4l2loopback = lp.v4l2loopback.overrideAttrs (o: {
-            installFlags = (o.installFlags or [ ]) ++ [ "DEPMOD=true" ];
-          });
-        }
-      );
-    })
-  ];
-
   programs.obs-studio = {
     enable = true;
 
