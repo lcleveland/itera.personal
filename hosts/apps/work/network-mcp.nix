@@ -61,6 +61,13 @@
           url = "http://netbox.lselectric.local";
           token_ref = "netbox-token";
           opt_in_tag = "network-mcp";
+          # oob_ip first: a router whose primary IP (loopback) is unroutable from
+          # here carries its reachable management address there.
+          address_order = [
+            "oob_ip"
+            "primary_ip4"
+            "primary_ip6"
+          ];
         }
       ];
       rules = [
