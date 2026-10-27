@@ -437,11 +437,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792970209,
-        "narHash": "sha256-TGWkNnJqxfm3jhZy49pTme3lcB6Amm+hzCwP9tCvtxM=",
+        "lastModified": 1793133779,
+        "narHash": "sha256-1w6bDcwTWhuQip5D50Ln5JzbwVzT8Xw4aJMVL4IzSwU=",
         "owner": "lcleveland",
         "repo": "netbox-mcp",
-        "rev": "f86129b54efe968ab8e5f3d2fdcbb62cd8407952",
+        "rev": "b5e1b5faa148ef60db5e622342661095177d64d9",
         "type": "github"
       },
       "original": {
@@ -497,11 +497,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793133249,
-        "narHash": "sha256-BdICYLuCCY1uRDqcA43qywaNH73AyDS/DT9ANQIZfVo=",
+        "lastModified": 1793134768,
+        "narHash": "sha256-290Btzhu+bp8vAZjNpGmw1CPcVsiW4c1DwdSXecI2Ns=",
         "owner": "lcleveland",
         "repo": "network-mcp",
-        "rev": "6084a140b7a6a5ab8ffc8b28a7c7132575d33f43",
+        "rev": "bdae2c14c3f8c67d235dd2b88cf8bb89d62767c5",
         "type": "github"
       },
       "original": {
