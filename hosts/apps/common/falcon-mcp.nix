@@ -28,9 +28,10 @@
     clientSecretFile = "/persist/secrets/falcon-mcp-client-secret";
 
     # Full write access, deliberately — including containment and RTR on live
-    # hosts, rtr-respond (kill processes, put/delete files) and destructive (hide
-    # hosts, delete quarantined files), the last two of which the module warns
-    # about on every rebuild. The API client's scopes are the gate that does not
+    # hosts, rtr-respond (kill processes, put/delete files), destructive (hide
+    # hosts, delete quarantined files) and uninstall-token (reveal one host's
+    # sensor maintenance token), the last three of which the module warns about
+    # on every rebuild. The API client's scopes are the gate that does not
     # depend on this server being correct. All are off upstream by default.
     allow = {
       triage = true;
@@ -43,6 +44,7 @@
       rtr-respond = true;
       destructive = true;
       workflows = true;
+      uninstall-token = true;
     };
   };
 }
