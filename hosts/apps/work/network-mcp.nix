@@ -49,9 +49,10 @@
     # copied to startup-config.
     allowConfig = true;
     settings = {
-      # The server dials nothing outside the management prefixes, which come from
-      # a credential ref so the site addressing stays out of the Nix store and
-      # this repo. Read once at startup: restart the unit after editing it.
+      # The server dials nothing outside the management prefixes. They come from
+      # NetBox IPAM (management_prefixes below); this credential ref is only the
+      # fallback when NetBox is unreachable at startup, and keeps the site
+      # addressing out of the Nix store. Both are read once at startup.
       prefixes_ref = "prefixes";
       # Devices come from NetBox; only those tagged `network-mcp` are opted in.
       sources = [
@@ -68,6 +69,9 @@
             "primary_ip4"
             "primary_ip6"
           ];
+          # IPAM prefixes tagged network-mcp-mgmt are the management prefixes;
+          # anyone who can tag a prefix in NetBox widens where the server connects.
+          management_prefixes.tag = "network-mcp-mgmt";
         }
       ];
       rules = [
