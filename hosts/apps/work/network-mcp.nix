@@ -49,6 +49,9 @@
     # copied to startup-config.
     allowConfig = true;
     settings = {
+      # Lets `network_change action=archive` set `archive path` once on an IOS-XE
+      # device that lacks it (unsaved, not reverted). Key is the NetBox platform slug.
+      platforms.cisco-ios-xe.archive_path = "flash:archive";
       # The server dials nothing outside the management prefixes. They come from
       # NetBox IPAM (management_prefixes below); this credential ref is only the
       # fallback when NetBox is unreachable at startup, and keeps the site
