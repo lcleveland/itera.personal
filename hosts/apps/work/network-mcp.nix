@@ -5,7 +5,12 @@
 # apps, same as netbox-mcp.
 #
 # The packaging + module live in github:lcleveland/network-mcp.
-{ inputs, ... }:
+{
+  config,
+  inputs,
+  pkgs,
+  ...
+}:
 {
   imports = [ inputs.network-mcp.nixosModules.default ];
 
@@ -17,7 +22,6 @@
   # first rebuild, on each work host:
   #
   #   printf %s '{"username":"<user>","password":"<pw>"}' | sudo install -m 0400 /dev/stdin /persist/secrets/network-mcp-ssh-read
-  #   printf %s '{"token":"<netbox token>"}'              | sudo install -m 0400 /dev/stdin /persist/secrets/network-mcp-netbox-token
   #   printf %s '{"management_prefixes":["<cidr>", ...]}' | sudo install -m 0400 /dev/stdin /persist/secrets/network-mcp-prefixes
   #
   # Device SSH host keys, pinned by IP (no trust-on-first-use). Not secret, but the
@@ -31,7 +35,7 @@
 
     credentials = {
       ssh-read = "/persist/secrets/network-mcp-ssh-read";
-      netbox-token = "/persist/secrets/network-mcp-netbox-token";
+      netbox-token = "/run/network-mcp-netbox-token"; # wrapped from netbox-mcp's, below
       prefixes = "/persist/secrets/network-mcp-prefixes";
     };
 
@@ -59,5 +63,21 @@
         }
       ];
     };
+  };
+
+  # network-mcp wants the token as JSON {"token": …}; netbox-mcp's file is the
+  # bare token. Wrap it on every network-mcp start, so there is one token to rotate.
+  systemd.services.network-mcp-netbox-token = {
+    description = "Wrap netbox-mcp's API token for network-mcp";
+    before = [ "network-mcp.service" ];
+    requiredBy = [ "network-mcp.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      UMask = "0077";
+    };
+    script = ''
+      ${pkgs.jq}/bin/jq -n --rawfile t ${config.services.netbox-mcp.apiTokenFile} \
+        '{token: ($t | rtrimstr("\n"))}' > /run/network-mcp-netbox-token
+    '';
   };
 }
