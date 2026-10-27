@@ -45,9 +45,10 @@
     # Config writes via network_change (IOS-XE / NX-OS only): plan, apply under a
     # revert timer, confirm or roll back. Unvalidated on hardware upstream, so
     # trial it on a non-critical device first; IOS-XE needs `archive path` set on
-    # the device before apply. allowSave stays off: confirmed changes are not
-    # copied to startup-config.
+    # the device before apply. allowSave adds action=save (copy running-config
+    # startup-config), only at the running config of the last confirmed change.
     allowConfig = true;
+    allowSave = true;
     settings = {
       # Lets `network_change action=archive` set `archive path` once on an IOS-XE
       # device that lacks it (unsaved, not reverted). Key is the NetBox platform slug.
