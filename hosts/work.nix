@@ -12,6 +12,8 @@
     ./apps/work/netbox-mcp.nix
     # AD + Entra ID MCP server (the domain controllers are work network only).
     ./apps/work/microsoft-directory-mcp.nix
+    # Network device MCP server (SSH/SNMP; the devices are work network only).
+    ./apps/work/network-mcp.nix
   ];
 
   itera = {

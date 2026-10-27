@@ -1,0 +1,63 @@
+# network-mcp — an MCP server that reads network devices over SSH (and SNMP), so
+# Claude Code can run gated `show` commands and read configs on the work routers
+# and switches. Work-tenant hosts only (framework, x1yoga): the devices are only
+# reachable on the work network, so this file is imported only through work.nix's
+# apps, same as netbox-mcp.
+#
+# The packaging + module live in github:lcleveland/network-mcp.
+{ inputs, ... }:
+{
+  imports = [ inputs.network-mcp.nixosModules.default ];
+
+  # Loopback HTTP on 8237: the default 8232 is netbox-mcp's. Register once per host:
+  #
+  #   claude mcp add --scope user --transport http network http://127.0.0.1:8237/mcp
+  #
+  # Secrets, read via systemd LoadCredential, each a JSON file. Create before the
+  # first rebuild, on each work host:
+  #
+  #   printf %s '{"username":"<user>","password":"<pw>"}' | sudo install -m 0400 /dev/stdin /persist/secrets/network-mcp-ssh-read
+  #   printf %s '{"token":"<netbox token>"}'              | sudo install -m 0400 /dev/stdin /persist/secrets/network-mcp-netbox-token
+  #   printf %s '{"management_prefixes":["<cidr>", ...]}' | sudo install -m 0400 /dev/stdin /persist/secrets/network-mcp-prefixes
+  #
+  # Device SSH host keys, pinned by IP (no trust-on-first-use). Not secret, but the
+  # unit runs as a DynamicUser, so the file must be world-readable:
+  #
+  #   ssh-keyscan <device ip> ... | sudo install -D -m 0444 /dev/stdin /persist/network-mcp/known_hosts
+  services.network-mcp = {
+    enable = true;
+    port = 8237;
+    knownHostsFile = "/persist/network-mcp/known_hosts";
+
+    credentials = {
+      ssh-read = "/persist/secrets/network-mcp-ssh-read";
+      netbox-token = "/persist/secrets/network-mcp-netbox-token";
+      prefixes = "/persist/secrets/network-mcp-prefixes";
+    };
+
+    # Read-only: allowConfig stays off (its IOS-XE write path is unvalidated on
+    # hardware upstream).
+    settings = {
+      # The server dials nothing outside the management prefixes, which come from
+      # a credential ref so the site addressing stays out of the Nix store and
+      # this repo. Read once at startup: restart the unit after editing it.
+      prefixes_ref = "prefixes";
+      # Devices come from NetBox; only those tagged `network-mcp` are opted in.
+      sources = [
+        {
+          name = "netbox";
+          type = "netbox";
+          url = "http://netbox.lselectric.local";
+          token_ref = "netbox-token";
+          opt_in_tag = "network-mcp";
+        }
+      ];
+      rules = [
+        {
+          match = "default";
+          read_ref = "ssh-read";
+        }
+      ];
+    };
+  };
+}

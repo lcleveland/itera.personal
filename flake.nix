@@ -89,6 +89,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # network-mcp — an MCP server that reads network devices over SSH and SNMP.
+    # Same shape as netbox-mcp (Go, nixosModules.default -> services.network-mcp.*)
+    # and work-laptops-only for the same reason: the devices are only on the work
+    # network. Imported by hosts/apps/work/network-mcp.nix, one of work.nix's
+    # apps. Share nixpkgs.
+    network-mcp = {
+      url = "github:lcleveland/network-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Netskope Client for Linux (the corporate SASE/SSE endpoint agent).
     # A flake exposing nixosModules.default (option: services.netskope.*) plus the
     # unfree, tenant-specific NSClient.run packaging. Unlike ninjarmm-ncplayer this
