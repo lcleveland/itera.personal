@@ -27,6 +27,9 @@
     clientIdFile = "/persist/secrets/falcon-mcp-client-id";
     clientSecretFile = "/persist/secrets/falcon-mcp-client-secret";
 
+    # Filter writes may touch up to 1M records, sent in batches of maxBulk (1000).
+    maxJob = 1000000;
+
     # Full write access, deliberately — including containment and RTR on live
     # hosts, rtr-respond (kill processes, put/delete files), destructive (hide
     # hosts, delete quarantined files) and uninstall-token (reveal one host's
