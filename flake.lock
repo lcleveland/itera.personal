@@ -457,11 +457,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793194939,
-        "narHash": "sha256-Ly2cgQjtKnQVIAeOJkKzoQwwHqI2N4XsnbSMr+L5N7M=",
+        "lastModified": 1793210068,
+        "narHash": "sha256-LhI+wMI4eK2Fum4TdJI6FrngUmSb2lshzjBp+09Xm3Y=",
         "owner": "lcleveland",
         "repo": "netskope-client",
-        "rev": "e5cf5240420becc7dad8a880bf0ec96ff674104f",
+        "rev": "12871ad81520916ad4c054562e5a71c15ff5e706",
         "type": "github"
       },
       "original": {
@@ -517,11 +517,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792970209,
-        "narHash": "sha256-tt4ahsXlk91XlUctg1Or3/pDaCoaYaXeaX37/BGuVSc=",
+        "lastModified": 1793210917,
+        "narHash": "sha256-Sq8EYCLnErSB1Rta2nbeJC5qceEPvXmQvlNgHaYfPDQ=",
         "owner": "lcleveland",
         "repo": "ninjaone-mcp",
-        "rev": "37ef3482c92cd2bf1df9e7fb9ec8573d07b36eac",
+        "rev": "68de371acb8fda1850333531456de8e552959517",
         "type": "github"
       },
       "original": {
