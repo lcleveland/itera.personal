@@ -4,7 +4,7 @@
 # API client that needs nothing but credentials and network.
 #
 # The packaging + module live in github:lcleveland/ninjaone-mcp.
-{ inputs, ... }:
+{ inputs, config, ... }:
 {
   imports = [ inputs.ninjaone-mcp.nixosModules.default ];
 
@@ -28,6 +28,18 @@
     #   printf %s '<secret>' | sudo install -m 0400 /dev/stdin /persist/secrets/ninjaone-client-secret
     clientSecretFile = "/persist/secrets/ninjaone-client-secret";
 
+    # Web app (authorization code + refresh token) for user context: NinjaOne
+    # only accepts script runs and ticket writes from a signed-in user. Its
+    # redirect URI is http://127.0.0.1:8233/oauth/callback. Create before the
+    # first rebuild that enables this, on EVERY host (a missing file stops the
+    # service from starting), then sign in once per host via
+    # `ninjaone_status action=authorize`:
+    #
+    #   printf %s '<web client id>' | sudo install -m 0400 /dev/stdin /persist/secrets/ninjaone-web-client-id
+    #   printf %s '<web client secret>' | sudo install -m 0400 /dev/stdin /persist/secrets/ninjaone-web-client-secret
+    webClientIdFile = "/persist/secrets/ninjaone-web-client-id";
+    webClientSecretFile = "/persist/secrets/ninjaone-web-client-secret";
+
     # Must be explicit: with the default [ ] the server omits `scope` and
     # NinjaOne's token endpoint answers 400 invalid_scope. `control` (remote
     # access) is left off — no tool uses it.
@@ -48,4 +60,7 @@
     allowScripts = true;
     allowDeviceAdmin = true;
   };
+
+  # The user's refresh token rotates on every use; keep it across reboots.
+  itera.impermanence.directories = config.services.ninjaone-mcp.persistedPaths;
 }
