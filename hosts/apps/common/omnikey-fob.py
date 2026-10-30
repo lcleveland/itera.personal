@@ -36,6 +36,7 @@ import getpass
 import json
 import os
 import select
+import signal
 import sys
 import time
 import urllib.error
@@ -352,10 +353,15 @@ except KeyboardInterrupt:
     pass
 finally:
     # Leave the reader as found: KBW off in its stored config, CCID now.
+    # A second Ctrl+C here would skip the lock removal and leave the udev CCID switch disabled.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    print("Restoring the reader to CCID mode (this can take a few seconds)...", file=sys.stderr)
     try:
-        store_kbw(False)
-    except (OSError, RuntimeError) as e:
-        print("Could not turn keyboard mode back off; the udev rule will switch it to CCID on next plug-in: %s" % e, file=sys.stderr)
-    if kbw_present():
-        to_ccid()
-    os.remove(LOCK)
+        try:
+            store_kbw(False)
+        except (OSError, RuntimeError) as e:
+            print("Could not turn keyboard mode back off; the udev rule will switch it to CCID on next plug-in: %s" % e, file=sys.stderr)
+        if kbw_present():
+            to_ccid()
+    finally:
+        os.remove(LOCK)
