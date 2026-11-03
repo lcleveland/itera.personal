@@ -417,11 +417,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793398593,
-        "narHash": "sha256-pTYdGnZCJIfdOQb3prZF9nw+0Q9Avrk+NDO7J6Hm2k8=",
+        "lastModified": 1793717097,
+        "narHash": "sha256-lTFNrv25c05TOwIzMhQ5pnTksJjS9FMO8VL7VcnuZ3E=",
         "owner": "lcleveland",
         "repo": "microsoft-directory-mcp",
-        "rev": "c5ff4b506e8fb757bae901b66d290efa1ef4417e",
+        "rev": "9fc3eff34e5b99d6e42c9597b4d38db097ed4a8c",
         "type": "github"
       },
       "original": {
@@ -517,11 +517,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793400227,
-        "narHash": "sha256-wlcB3tJ9yvqlhSaToPKljwBev8JFTwU3WiCL8XJ+OFI=",
+        "lastModified": 1793634411,
+        "narHash": "sha256-uAfANELQxePWUCg/3xVJrCK1mSUc0GgwwcZZUQkWkFg=",
         "owner": "lcleveland",
         "repo": "ninjaone-mcp",
-        "rev": "4118a1c188493529fcf461555a95cd291f02a0c2",
+        "rev": "561d1c92112ad0a9d3c294bfddb1320de723a8d2",
         "type": "github"
       },
       "original": {
@@ -637,11 +637,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1793341285,
-        "narHash": "sha256-Y1CiZ4SoBUjLQyQM/pY+rS2dXD3CHLPstF0lmOc73D4=",
+        "lastModified": 1793540411,
+        "narHash": "sha256-fiPJ88izTVucjeo2EQ3jk4aWmLg03I1D4vxnX2QjEgE=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "1c89083e451e891152365b799595cf7790a43325",
+        "rev": "0bb2eedc20e4739f29e8045034f2828ad7054f8f",
         "type": "github"
       },
       "original": {
