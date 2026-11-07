@@ -22,6 +22,7 @@
     ./apps/common/freshservice-mcp.nix
     ./apps/common/falcon-mcp.nix
     ./apps/common/sshpass.nix
+    ./apps/common/tuios.nix
     inputs.ninjarmm-ncplayer.nixosModules.default
     # OMNIKEY reader + fob inventory scanner (omnikey-fob).
     ./apps/common/smartcard-reader.nix
