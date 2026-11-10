@@ -117,6 +117,14 @@ in
         # tuios draws its own tabs/workspaces; WezTerm's bar only shows with 2+ tabs.
         hide_tab_bar_if_only_one_tab = true;
       };
+      # shortcut: while an overlay is open tuios asks for kitty "associated text",
+      # and WezTerm then sends Escape as ESC[27;1;27u. tuios 0.12.1 names the key
+      # by that text (a raw ESC), so `esc` never matches and overlays won't close.
+      # A plain ESC byte parses fine. Drop this once tuios ignores control-char text.
+      programs.wezterm.extraLua = ''
+        config.keys = config.keys or {}
+        table.insert(config.keys, { key = 'Escape', mods = 'NONE', action = wezterm.action.SendString '\x1b' })
+      '';
     };
   };
 }
