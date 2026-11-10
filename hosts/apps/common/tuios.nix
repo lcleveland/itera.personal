@@ -25,6 +25,18 @@
 }:
 let
   cfg = config.programs.tuios;
+  # Run by tuios's Claude status line feed (--then) with Claude's status JSON on
+  # stdin. tuios's own context value ("13%") isn't a number its colour rules can
+  # compare, so this files the percent under one of three keys, each with a fixed
+  # colour on the rail. It prints nothing, so Claude's status line stays empty.
+  contextLevel = pkgs.writeShellScript "tuios-context-level" ''
+    pct=$(${lib.getExe pkgs.jq} -r '.context_window.used_percentage // empty | floor' 2>/dev/null) || exit 0
+    [ -n "$pct" ] || exit 0
+    ok= warn= high=
+    if [ "$pct" -ge 80 ]; then high="ctx $pct%"; elif [ "$pct" -ge 50 ]; then warn="ctx $pct%"; else ok="ctx $pct%"; fi
+    ${lib.getExe pkgs.tuios} set-agent-meta "ctx_ok=$ok" "ctx_warn=$warn" "ctx_high=$high" >/dev/null 2>&1
+    exit 0
+  '';
 in
 {
   options.programs.tuios.enable = lib.mkEnableOption "tuios" // {
@@ -38,7 +50,7 @@ in
       unitConfig.ConditionUser = "lcleveland";
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${lib.getExe pkgs.tuios} integration install claude-code --statusline";
+        ExecStart = "${lib.getExe pkgs.tuios} integration install claude-code --statusline --then ${contextLevel}";
       };
     };
 
@@ -63,6 +75,31 @@ in
             agents.approvals = {
               enabled = [ "claude-code" ];
               hold_seconds = 120;
+            };
+            # The shipped rail row, with the model, cost and the always-on context level
+            # in place of `context` (which only draws at 80% and over).
+            appearance.sidebar.agent_row = {
+              tokens = [
+                "session"
+                "need"
+                "harness"
+                "name"
+                "progress"
+                "elapsed"
+                "$model"
+                "$cost"
+                "$ctx_ok"
+                "$ctx_warn"
+                "$ctx_high"
+                "subagents"
+                "pr"
+                "meta"
+                "now"
+                "message"
+              ];
+              "$ctx_ok".fg = "success";
+              "$ctx_warn".fg = "warning";
+              "$ctx_high".fg = "error";
             };
           }
         );
