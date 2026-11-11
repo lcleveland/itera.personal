@@ -37,6 +37,17 @@ let
     ${lib.getExe pkgs.tuios} set-agent-meta "ctx_ok=$ok" "ctx_warn=$warn" "ctx_high=$high" >/dev/null 2>&1
     exit 0
   '';
+  # Claude's own "waiting for your input" alert is an OSC 777 that tuios hands to
+  # WezTerm, which posts it critical with no timeout, so it never closes. tuios
+  # already alerts on needs_input from the hooks, so turn Claude's off.
+  quietClaude = pkgs.writeShellScript "claude-notifications-off" ''
+    f="$HOME/.claude.json"
+    [ -f "$f" ] || exit 0
+    t=$(mktemp) || exit 0
+    # Written in place, not moved: the file is an impermanence bind mount.
+    ${lib.getExe pkgs.jq} '.preferredNotifChannel = "notifications_disabled"' "$f" > "$t" && cat "$t" > "$f"
+    rm -f "$t"
+  '';
 in
 {
   options.programs.tuios.enable = lib.mkEnableOption "tuios" // {
@@ -51,6 +62,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${lib.getExe pkgs.tuios} integration install claude-code --statusline --then ${contextLevel}";
+        ExecStartPost = "${quietClaude}";
       };
     };
 
