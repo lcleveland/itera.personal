@@ -59,9 +59,18 @@ in
         (
           {
             startup = {
+              # Both default true, but read as false when the config has no [startup]
+              # table; set here so config.toml (tuios-written) needn't carry them.
+              daemon = true; # bare `tuios` attaches to a daemon session
+              tiled = true; # new sessions start tiled
               open_default_window = true; # an empty session starts with a terminal
               start_in_terminal_mode = true; # typing goes to the pane, not window mode
             };
+            # Never run a project's tape just because a shell entered its directory.
+            tape.autorun = "off";
+            # Sessions persist (~/.local/state), so resume each pane's agent after a
+            # daemon restart instead of asking per pane.
+            daemon.resume_agents = "auto";
             # Agent alerts as desktop popups that time out. tuios's own popup goes via
             # WezTerm, which sends it critical with timeout 0, so DMS keeps it up forever.
             # The daemon runs `command` with sh and TUIOS_* in the env; it reads it at start.
