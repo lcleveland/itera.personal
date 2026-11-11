@@ -12,6 +12,7 @@
   imports = [
     ./apps/common/teams.nix
     ./apps/common/zoom.nix
+    ./apps/common/chrome.nix
     ./apps/common/yubico.nix
     ./apps/common/onlyoffice.nix
     ./apps/common/bruno.nix
