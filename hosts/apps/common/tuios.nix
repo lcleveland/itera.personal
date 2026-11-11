@@ -97,17 +97,18 @@ in
               enabled = [ "claude-code" ];
               hold_seconds = 120;
             };
-            # The shipped rail row, with the model, cost and the always-on context level
-            # in place of `context` (which only draws at 80% and over).
+            # The shipped rail row, with cost and the always-on context level in place
+            # of `context` (which only draws at 80% and over). harness and model are
+            # dropped: they read "claude · Opus 5.5" on every row, and the row never
+            # wraps (a token that doesn't fit is dropped whole), so they crowded out
+            # cost, context and the message.
             appearance.sidebar.agent_row = {
               tokens = [
                 "session"
                 "need"
-                "harness"
                 "name"
                 "progress"
                 "elapsed"
-                "$model"
                 "$cost"
                 "$ctx_ok"
                 "$ctx_warn"
@@ -122,6 +123,9 @@ in
               "$ctx_warn".fg = "warning";
               "$ctx_high".fg = "error";
             };
+            # Keep finished agents' full rows (cost, context, last message) instead
+            # of folding them to one line after an hour at rest.
+            appearance.sidebar.agent_rest_fold = "off";
           }
         );
 
