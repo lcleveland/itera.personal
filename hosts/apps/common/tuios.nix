@@ -139,7 +139,7 @@ in
         hide_tab_bar_if_only_one_tab = true;
       };
       # shortcut: while an overlay is open tuios asks for kitty "associated text",
-      # and WezTerm then sends Escape as ESC[27;1;27u and Enter as ESC[13;1;13u.
+      # and WezTerm then sends Escape, Enter and Backspace as ESC[27;1;27u, ESC[13;1;13u, ESC[127;1;127u.
       # tuios 0.12.1 names the key by that text (a raw control char), so `esc`
       # never matches (overlays won't close) and Enter adds a new line instead of
       # sending. Plain bytes parse fine. Drop this once tuios ignores control-char text.
@@ -147,6 +147,7 @@ in
         config.keys = config.keys or {}
         table.insert(config.keys, { key = 'Escape', mods = 'NONE', action = wezterm.action.SendString '\x1b' })
         table.insert(config.keys, { key = 'Enter', mods = 'NONE', action = wezterm.action.SendString '\r' })
+        table.insert(config.keys, { key = 'Backspace', mods = 'NONE', action = wezterm.action.SendString '\x7f' })
       '';
     };
   };
