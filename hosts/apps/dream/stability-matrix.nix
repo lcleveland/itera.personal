@@ -41,7 +41,12 @@ let
     # ComfyUI custom node: CERTIFICATE_VERIFY_FAILED / unable to get local issuer
     # certificate. The FHS wrapper binds the host /etc/ssl/certs, so just point
     # OpenSSL (and friends) at the system bundle; child processes inherit it.
+    # The FHS env ships its own /etc/xdg, which hides the host's
+    # /etc/xdg/mimeapps.list (the system default-browser setting), so xdg-open
+    # fell back to the first https handler it found (Chrome). The host /etc is
+    # bound at /.host-etc, so put its xdg dir first.
     profile = ''
+      export XDG_CONFIG_DIRS="/.host-etc/xdg''${XDG_CONFIG_DIRS:+:$XDG_CONFIG_DIRS}"
       export DOTNET_BUNDLE_EXTRACT_BASE_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/StabilityMatrix-dotnet"
       export SSL_CERT_FILE="''${SSL_CERT_FILE:-/etc/ssl/certs/ca-certificates.crt}"
       export REQUESTS_CA_BUNDLE="$SSL_CERT_FILE"
