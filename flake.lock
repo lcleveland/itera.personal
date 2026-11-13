@@ -391,11 +391,11 @@
         "sops-nix": "sops-nix"
       },
       "locked": {
-        "lastModified": 1794589043,
-        "narHash": "sha256-Rc6zm3D4hZN7PusNA1rIxzd1xnbavGKPRlXUXQgjryc=",
+        "lastModified": 1794589373,
+        "narHash": "sha256-0ytgxremLi4KGalyFot0QN+rec3NDcOVEai3cp1VWM8=",
         "owner": "lcleveland",
         "repo": "itera",
-        "rev": "98cf309937912db0d25acde7bd7d48be7ef84850",
+        "rev": "4a3e47f9db1fe9e37dc5253a7a74b3de0740a3f9",
         "type": "github"
       },
       "original": {
@@ -649,13 +649,13 @@
       "locked": {
         "lastModified": 1794525911,
         "narHash": "sha256-DlKeQCcYSDd+jDo9kDdj0ORzGZBO/M5dMlDu35FVkRQ=",
-        "owner": "cynicsketch",
+        "owner": "nix-community",
         "repo": "nix-mineral",
         "rev": "099600351c730ab084fdcc9c19479725d0093067",
         "type": "github"
       },
       "original": {
-        "owner": "cynicsketch",
+        "owner": "nix-community",
         "repo": "nix-mineral",
         "type": "github"
       }
