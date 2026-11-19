@@ -236,6 +236,7 @@
           "memUsage"
           "ipIndicator"
           "iteraUpdate"
+          "tuiosInbox"
           "notificationButton"
           "battery"
           "controlCenterButton"
