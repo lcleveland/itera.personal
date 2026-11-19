@@ -224,7 +224,7 @@
         centerWidgets = [
           "music"
           "clock"
-          # The tuios Inbox, centred to be noticed; hidden while empty.
+          # The TUIOS widget (Inbox and agents), centred to be noticed.
           "tuiosInbox"
           "weather"
         ];
