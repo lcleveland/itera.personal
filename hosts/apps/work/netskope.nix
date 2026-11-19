@@ -224,9 +224,9 @@
         centerWidgets = [
           "music"
           "clock"
+          "weather"
           # The TUIOS widget (Inbox and agents), centred to be noticed.
           "tuiosInbox"
-          "weather"
         ];
         rightWidgets = [
           "systemTray"
