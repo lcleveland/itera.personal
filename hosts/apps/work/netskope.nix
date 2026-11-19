@@ -224,6 +224,8 @@
         centerWidgets = [
           "music"
           "clock"
+          # The tuios Inbox, centred to be noticed; hidden while empty.
+          "tuiosInbox"
           "weather"
         ];
         rightWidgets = [
@@ -236,7 +238,6 @@
           "memUsage"
           "ipIndicator"
           "iteraUpdate"
-          "tuiosInbox"
           "notificationButton"
           "battery"
           "controlCenterButton"
