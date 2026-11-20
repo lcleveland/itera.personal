@@ -1,8 +1,8 @@
 # microsoft-directory-mcp — an MCP server over the on-prem Active Directory forest
 # (LDAPS) and the Entra ID tenant (Graph), so Claude Code can read and edit users,
-# groups, devices and policy on both sides. Work-tenant hosts only (framework,
-# x1yoga): the domain controllers are only reachable on the work network, so this
-# file is imported only through work.nix's apps, same as netbox-mcp.
+# groups, devices and policy on both sides. Imported through work.nix's apps
+# (framework, x1yoga) and by dream. The domain controllers are only reachable on
+# the work network (on dream: with Netskope steering on); Entra works anywhere.
 #
 # The packaging + module live in github:lcleveland/microsoft-directory-mcp.
 { inputs, ... }:

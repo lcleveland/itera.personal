@@ -80,9 +80,9 @@
 
     # microsoft-directory-mcp — an MCP server over on-prem Active Directory (LDAPS)
     # and Entra ID (Graph). Same shape as netbox-mcp (Go, nixosModules.default ->
-    # services.microsoft-directory-mcp.*) and work-laptops-only for the same
-    # reason: the AD domain controllers are only on the work network. Imported by
-    # hosts/apps/work/microsoft-directory-mcp.nix, one of work.nix's apps.
+    # services.microsoft-directory-mcp.*). Not imported for every host: imported
+    # by hosts/apps/work/microsoft-directory-mcp.nix, one of work.nix's apps, and
+    # by dream.
     # Share nixpkgs.
     microsoft-directory-mcp = {
       url = "github:lcleveland/microsoft-directory-mcp";

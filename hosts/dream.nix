@@ -51,6 +51,9 @@ in
     # Work Netskope client, enrolled but dormant at boot: the tenant turns steering
     # on as soon as the daemon runs, so start it from the bar widget when wanted.
     ./apps/work/netskope.nix
+    # AD + Entra MCP server: Entra (Graph) works anywhere; AD needs the work
+    # network, i.e. Netskope steering on.
+    ./apps/work/microsoft-directory-mcp.nix
   ];
 
   services.netskope.autoStart = lib.mkForce false;
