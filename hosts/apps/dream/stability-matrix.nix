@@ -3,11 +3,11 @@
 { pkgs, lib, ... }:
 let
   pname = "stability-matrix";
-  version = "2.16.5";
+  version = "2.17.0";
 
   zip = pkgs.fetchurl {
     url = "https://github.com/LykosAI/StabilityMatrix/releases/download/v${version}/StabilityMatrix-linux-x64.zip";
-    hash = "sha256-XRuuIkbIdsvSqJpDBStcj+9lt+w2Pvqdw77VQoMxXgk=";
+    hash = "sha256-rd+iuHeceqTcddwt+CvD7uiMkMuKf6Tf4Tr+A/pgGDs=";
   };
 
   # The Linux release is a zip wrapping a single AppImage; appimageTools needs the
