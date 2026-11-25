@@ -63,6 +63,11 @@ let
         # The portable Python 3.10 StabilityMatrix downloads links against
         # libcrypt.so.1, which only libxcrypt-legacy provides.
         libxcrypt-legacy
+        # Comfyroll's "CR Select Font" node lists .ttf files from the hardcoded
+        # Debian dir /usr/share/fonts/truetype and errors if it's missing; these
+        # install flat into share/fonts/truetype, which the FHS /usr picks up.
+        dejavu_fonts
+        liberation_ttf
       ];
 
     extraInstallCommands = ''
